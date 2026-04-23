@@ -1,5 +1,8 @@
 name: Public Endpoint Check
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   workflow_dispatch:
   schedule:
@@ -10,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Prepare stack env
         run: |
@@ -35,4 +38,4 @@ jobs:
           EOF
 
       - name: Check public URLs
-        run: ./scripts/check-public-urls.sh
+        run: bash ./scripts/check-public-urls.sh
