@@ -16,6 +16,7 @@ if ! command -v ss >/dev/null 2>&1; then
 fi
 
 verify_status=0
+VERIFY_RETRY_DELAY="${VERIFY_RETRY_DELAY:-2}"
 mapfile -t target_services < <(list_target_services "$@")
 
 service_requested() {
@@ -70,6 +71,28 @@ check_curl() {
     echo "NG ${label}"
     verify_status=1
   fi
+}
+
+check_curl_with_retry() {
+  local label="$1"
+  local retries="$2"
+  shift 2
+
+  local attempt=1
+  while (( attempt <= retries )); do
+    if "$@" >/dev/null 2>&1; then
+      echo "OK ${label}"
+      return 0
+    fi
+
+    if (( attempt < retries )); then
+      sleep "${VERIFY_RETRY_DELAY}"
+    fi
+    ((attempt++))
+  done
+
+  echo "NG ${label}"
+  verify_status=1
 }
 
 https_active() {
@@ -131,7 +154,7 @@ verify_reverse_proxy() {
       check_curl "proxy openvpn https" proxy_check_https "${openvpn_host}" /
     fi
     if service_requested "app-mirakurun-epgstation"; then
-      check_curl "proxy epgstation https" proxy_check_https "${epgstation_host}" /
+      check_curl_with_retry "proxy epgstation https" 30 proxy_check_https "${epgstation_host}" /
     fi
   else
     if service_requested "app-wordpress"; then
@@ -153,7 +176,7 @@ verify_reverse_proxy() {
       check_curl "proxy openvpn http" proxy_check_http "${openvpn_host}" /
     fi
     if service_requested "app-mirakurun-epgstation"; then
-      check_curl "proxy epgstation http" proxy_check_http "${epgstation_host}" /
+      check_curl_with_retry "proxy epgstation http" 30 proxy_check_http "${epgstation_host}" /
     fi
   fi
 }
@@ -186,8 +209,8 @@ verify_service_ports() {
   if service_requested "app-mirakurun-epgstation"; then
     mirakurun_port="$(env_value "app-mirakurun-epgstation" "MIRAKURUN_PORT" "40772")"
     epgstation_port="$(env_value "app-mirakurun-epgstation" "EPGSTATION_PORT" "8888")"
-    check_curl "mirakurun api" curl -fsS "http://127.0.0.1:${mirakurun_port}/api/version"
-    check_curl "epgstation" curl -fsSI "http://127.0.0.1:${epgstation_port}/"
+    check_curl_with_retry "mirakurun api" 30 curl -fsS "http://127.0.0.1:${mirakurun_port}/api/version"
+    check_curl_with_retry "epgstation" 30 curl -fsSI "http://127.0.0.1:${epgstation_port}/"
   fi
 }
 
