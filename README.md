@@ -48,7 +48,7 @@ cp stack.env.example stack.env.local
 - `app-txtmiru-with-narourb`
 - `app-mirakurun-epgstation`
 
-一覧は [repos/services.tsv](/home/hiyori2023/docker-stack-installer/repos/services.tsv:1) で管理します。
+一覧は `repos/services.tsv` で管理します。
 
 ## 初期設定
 
@@ -59,7 +59,7 @@ cp stack.env.example stack.env.local
 `stack.env.local` では repo を配置した親ディレクトリを指定します。
 
 ```bash
-STACK_ROOT=/home/hiyori2023
+STACK_ROOT=/path/to/workspace
 STACK_GITHUB_OWNER=Arrumis
 CLONE_PROTOCOL=https
 SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpress app-ttrss app-syncthing app-openvpn app-txtmiru-with-narourb app-mirakurun-epgstation"
@@ -102,7 +102,7 @@ SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpr
 ./scripts/smoke-test.sh --pull
 ```
 
-詳細な流れは [TEST_PC_CHECKLIST.md](/home/hiyori2023/docker-stack-installer/TEST_PC_CHECKLIST.md:1) にまとめています。
+詳細な流れは `TEST_PC_CHECKLIST.md` にまとめています。
 
 ## レイアウト確認
 
@@ -164,6 +164,8 @@ rollback も同様です。
 ./scripts/rollback-to-legacy.sh app-wordpress
 ./scripts/rollback-to-legacy.sh --apply app-wordpress
 ```
+
+この cutover 系スクリプトを使う場合は、`repos/legacy-services.example.tsv` を `repos/legacy-services.local.tsv` にコピーして、旧 compose のパスをそのマシン用に設定します。
 
 ## 方針
 

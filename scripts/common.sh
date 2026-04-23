@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 STACK_ENV_FILE="${STACK_ENV_FILE:-${REPO_ROOT}/stack.env.local}"
 SERVICES_FILE="${SERVICES_FILE:-${REPO_ROOT}/repos/services.tsv}"
+LEGACY_SERVICES_FILE="${LEGACY_SERVICES_FILE:-${REPO_ROOT}/repos/legacy-services.local.tsv}"
 
 if [[ -f "${STACK_ENV_FILE}" ]]; then
   set -a
@@ -13,7 +14,7 @@ if [[ -f "${STACK_ENV_FILE}" ]]; then
   set +a
 fi
 
-STACK_ROOT="${STACK_ROOT:-/home/hiyori2023}"
+STACK_ROOT="${STACK_ROOT:-$(cd "${REPO_ROOT}/.." && pwd)}"
 STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-Arrumis}"
 CLONE_PROTOCOL="${CLONE_PROTOCOL:-https}"
 
@@ -38,6 +39,11 @@ service_env_file() {
 
 service_legacy_compose_file() {
   local service_name="$1"
+  if [[ -f "${LEGACY_SERVICES_FILE}" ]]; then
+    awk -F '\t' -v svc="${service_name}" '$1 == svc { print $2 }' "${LEGACY_SERVICES_FILE}"
+    return 0
+  fi
+
   resolve_service_row "${service_name}" | awk -F '\t' '{ print $4 }'
 }
 

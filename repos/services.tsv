@@ -1,11 +1,11 @@
-# service_name	repo_dir	env_file	legacy_compose_file
-infra-reverse-proxy	infra-reverse-proxy	.env.local	/home/hiyori2023/docker20250920/compose/proxy/docker-compose.yml
-infra-fail2ban	infra-fail2ban	.env.local	/home/hiyori2023/docker20250920/compose/fail2ban/docker-compose.yaml
-infra-munin	infra-munin	.env.local	/home/hiyori2023/docker20250920/compose/munin/docker-compose.yml
-app-tategaki	app-tategaki	.env.local	/home/hiyori2023/docker20250920/compose/tategaki/docker-compose.yml
-app-wordpress	app-wordpress	.env.local	/home/hiyori2023/docker20250920/compose/wordpress/docker-compose.yml
-app-ttrss	app-ttrss	.env.local	/home/hiyori2023/docker20250920/compose/ttrss/docker-compose.yml
-app-syncthing	app-syncthing	.env.local	/home/hiyori2023/docker20250920/compose/sync/docker-compose.yml
-app-openvpn	app-openvpn	.env.local	/home/hiyori2023/docker20250920/compose/openvpn/docker-compose.yml
-app-txtmiru-with-narourb	app-txtmiru-with-narourb	.env.local	/home/hiyori2023/docker20250920/compose/txtmiru_with_narourb/docker-compose.yml
-app-mirakurun-epgstation	app-mirakurun-epgstation	.env.local	/home/hiyori2023/docker20250920/compose/mirakurun-epgstation/docker-compose.yml
+# service_name	repo_dir	env_file	legacy_compose_file(optional)
+infra-reverse-proxy	infra-reverse-proxy	.env.local
+infra-fail2ban	infra-fail2ban	.env.local
+infra-munin	infra-munin	.env.local
+app-tategaki	app-tategaki	.env.local
+app-wordpress	app-wordpress	.env.local
+app-ttrss	app-ttrss	.env.local
+app-syncthing	app-syncthing	.env.local
+app-openvpn	app-openvpn	.env.local
+app-txtmiru-with-narourb	app-txtmiru-with-narourb	.env.local
+app-mirakurun-epgstation	app-mirakurun-epgstation	.env.local

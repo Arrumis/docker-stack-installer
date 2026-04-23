@@ -1,0 +1,11 @@
+# service_name	legacy_compose_file
+infra-reverse-proxy	/path/to/legacy/compose/proxy/docker-compose.yml
+infra-fail2ban	/path/to/legacy/compose/fail2ban/docker-compose.yaml
+infra-munin	/path/to/legacy/compose/munin/docker-compose.yml
+app-tategaki	/path/to/legacy/compose/tategaki/docker-compose.yml
+app-wordpress	/path/to/legacy/compose/wordpress/docker-compose.yml
+app-ttrss	/path/to/legacy/compose/ttrss/docker-compose.yml
+app-syncthing	/path/to/legacy/compose/sync/docker-compose.yml
+app-openvpn	/path/to/legacy/compose/openvpn/docker-compose.yml
+app-txtmiru-with-narourb	/path/to/legacy/compose/txtmiru_with_narourb/docker-compose.yml
+app-mirakurun-epgstation	/path/to/legacy/compose/mirakurun-epgstation/docker-compose.yml
