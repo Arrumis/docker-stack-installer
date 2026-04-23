@@ -106,6 +106,9 @@ postinstall_service() {
     app-openvpn)
       run_service_script_if_present "${service_name}" "scripts/set-admin-password.sh"
       ;;
+    app-ttrss)
+      run_service_script_if_present "${service_name}" "scripts/capture-admin-password.sh"
+      ;;
   esac
 }
 
