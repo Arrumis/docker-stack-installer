@@ -54,7 +54,6 @@ cp stack.env.example stack.env.local
 - `app-ttrss`
 - `app-syncthing`
 - `app-openvpn`
-- `app-txtmiru-with-narourb`
 - `app-mirakurun-epgstation`
 
 一覧は `repos/services.tsv` で管理します。
@@ -71,7 +70,7 @@ cp stack.env.example stack.env.local
 STACK_ROOT=/path/to/workspace
 STACK_GITHUB_OWNER=Arrumis
 CLONE_PROTOCOL=https
-SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpress app-ttrss app-syncthing app-openvpn app-txtmiru-with-narourb app-mirakurun-epgstation"
+SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpress app-ttrss app-syncthing app-openvpn app-mirakurun-epgstation"
 ```
 
 `CLONE_PROTOCOL` は `https` か `ssh` を使えます。

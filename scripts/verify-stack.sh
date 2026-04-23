@@ -62,25 +62,53 @@ https_active() {
   ss -tln | grep -qE '[:.]443[[:space:]]'
 }
 
+proxy_check_https() {
+  local host="$1"
+  local path="${2:-/}"
+  curl -kfsSI --resolve "${host}:443:127.0.0.1" "https://${host}${path}"
+}
+
+proxy_check_http() {
+  local host="$1"
+  local path="${2:-/}"
+  curl -fsSI --resolve "${host}:80:127.0.0.1" "http://${host}${path}"
+}
+
 verify_reverse_proxy() {
   local domain
   local root_host
   local ttrss_host
   local munin_host
+  local tategaki_host
+  local syncthing_host
+  local openvpn_host
+  local epgstation_host
 
   domain="$(env_value "infra-reverse-proxy" "DOMAIN" "example.local")"
   root_host="$(env_value "infra-reverse-proxy" "ROOT_HOST" "${domain}")"
   ttrss_host="$(env_value "infra-reverse-proxy" "TTRSS_HOST" "ttrss.${domain}")"
   munin_host="$(env_value "infra-reverse-proxy" "MUNIN_HOST" "munin.${domain}")"
+  tategaki_host="$(env_value "infra-reverse-proxy" "TATEGAKI_HOST" "tategaki.${domain}")"
+  syncthing_host="$(env_value "infra-reverse-proxy" "SYNCTHING_HOST" "syncthing.${domain}")"
+  openvpn_host="$(env_value "infra-reverse-proxy" "OPENVPN_HOST" "openvpn.${domain}")"
+  epgstation_host="$(env_value "infra-reverse-proxy" "EPGSTATION_HOST" "epgstation.${domain}")"
 
   if https_active; then
-    check_curl "proxy wordpress https" curl -kfsSI -H "Host: ${root_host}" https://127.0.0.1/
-    check_curl "proxy ttrss https" curl -kfsSI -H "Host: ${ttrss_host}" https://127.0.0.1/tt-rss/
-    check_curl "proxy munin https" curl -kfsSI -H "Host: ${munin_host}" https://127.0.0.1/
+    check_curl "proxy wordpress https" proxy_check_https "${root_host}" /
+    check_curl "proxy ttrss https" proxy_check_https "${ttrss_host}" /tt-rss/
+    check_curl "proxy munin https" proxy_check_https "${munin_host}" /
+    check_curl "proxy tategaki https" proxy_check_https "${tategaki_host}" /
+    check_curl "proxy syncthing https" proxy_check_https "${syncthing_host}" /
+    check_curl "proxy openvpn https" proxy_check_https "${openvpn_host}" /
+    check_curl "proxy epgstation https" proxy_check_https "${epgstation_host}" /
   else
-    check_curl "proxy wordpress http" curl -fsSI -H "Host: ${root_host}" http://127.0.0.1/
-    check_curl "proxy ttrss http" curl -fsSI -H "Host: ${ttrss_host}" http://127.0.0.1/tt-rss/
-    check_curl "proxy munin http" curl -fsSI -H "Host: ${munin_host}" http://127.0.0.1/
+    check_curl "proxy wordpress http" proxy_check_http "${root_host}" /
+    check_curl "proxy ttrss http" proxy_check_http "${ttrss_host}" /tt-rss/
+    check_curl "proxy munin http" proxy_check_http "${munin_host}" /
+    check_curl "proxy tategaki http" proxy_check_http "${tategaki_host}" /
+    check_curl "proxy syncthing http" proxy_check_http "${syncthing_host}" /
+    check_curl "proxy openvpn http" proxy_check_http "${openvpn_host}" /
+    check_curl "proxy epgstation http" proxy_check_http "${epgstation_host}" /
   fi
 }
 
@@ -104,11 +132,6 @@ verify_service_ports() {
 
   tategaki_port="$(env_value "app-tategaki" "APP_PORT" "3000")"
   check_curl "tategaki" curl -fsSI "http://127.0.0.1:${tategaki_port}/"
-
-  txtmiru_port="$(env_value "app-txtmiru-with-narourb" "TXTMIRU_HTTP_PORT" "8081")"
-  favapi_port="$(env_value "app-txtmiru-with-narourb" "FAVAPI_HTTP_PORT" "18080")"
-  check_curl "txtmiru" curl -fsSI "http://127.0.0.1:${txtmiru_port}/"
-  check_curl "favapi" curl -fsSI "http://127.0.0.1:${favapi_port}/docs"
 
   mirakurun_port="$(env_value "app-mirakurun-epgstation" "MIRAKURUN_PORT" "40772")"
   epgstation_port="$(env_value "app-mirakurun-epgstation" "EPGSTATION_PORT" "8888")"

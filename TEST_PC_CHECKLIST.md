@@ -78,7 +78,8 @@ cp stack.env.example stack.env.local
 確認できる内容:
 
 - `ponkotu.mydns.jp` / `ttrss.*` / `munin.*` の proxy 経由応答
-- Syncthing / OpenVPN / Tategaki / TxtMiru / FavAPI のローカル応答
+- `tategaki.*` / `syncthing.*` / `openvpn.*` / `epgstation.*` の proxy 経由応答
+- Syncthing / OpenVPN / Tategaki のローカル応答
 - Mirakurun API / EPGStation のローカル応答
 
 `infra-reverse-proxy/data/letsencrypt/renewal/*.conf` が残っているマシンでは HTTPS を再利用し、証明書がない新規マシンでは HTTP で確認します。
