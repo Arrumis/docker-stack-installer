@@ -7,5 +7,4 @@ app-wordpress	/path/to/legacy/compose/wordpress/docker-compose.yml
 app-ttrss	/path/to/legacy/compose/ttrss/docker-compose.yml
 app-syncthing	/path/to/legacy/compose/sync/docker-compose.yml
 app-openvpn	/path/to/legacy/compose/openvpn/docker-compose.yml
-app-txtmiru-with-narourb	/path/to/legacy/compose/txtmiru_with_narourb/docker-compose.yml
 app-mirakurun-epgstation	/path/to/legacy/compose/mirakurun-epgstation/docker-compose.yml

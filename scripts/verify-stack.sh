@@ -117,8 +117,6 @@ verify_service_ports() {
   local admin_ui_port
   local openvpn_https_port
   local tategaki_port
-  local txtmiru_port
-  local favapi_port
   local mirakurun_port
   local epgstation_port
 
