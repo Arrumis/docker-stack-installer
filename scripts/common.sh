@@ -23,7 +23,7 @@ if [[ -f "${UNIFIED_ENV_FILE}" ]]; then
 fi
 
 STACK_ROOT="${STACK_ROOT:-$(cd "${REPO_ROOT}/.." && pwd)}"
-STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-Arrumis}"
+STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-your-github-user}"
 CLONE_PROTOCOL="${CLONE_PROTOCOL:-https}"
 
 env_get_file() {

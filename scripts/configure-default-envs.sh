@@ -19,7 +19,7 @@ usage() {
 Usage: ./scripts/configure-default-envs.sh [options]
 
 Options:
-  --domain <domain>              Base public domain, e.g. ponkotu.mydns.jp
+  --domain <domain>              Base public domain, e.g. sample.com
   --root-host <host>             Root host served by WordPress (default: same as domain)
   --email <email>                Email address used by certbot metadata
   --public-scheme <http|https>   Public URL scheme used for generated app URLs

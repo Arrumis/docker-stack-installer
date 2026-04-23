@@ -2,7 +2,7 @@
 set -euo pipefail
 
 STACK_ROOT="${STACK_ROOT:-${HOME}/docker-stack}"
-STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-Arrumis}"
+STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-your-github-user}"
 CLONE_PROTOCOL="${CLONE_PROTOCOL:-https}"
 DOMAIN="${DOMAIN:-}"
 ROOT_HOST="${ROOT_HOST:-}"
@@ -20,7 +20,7 @@ usage() {
 Usage: bootstrap-clean-ubuntu.sh [options]
 
 Options:
-  --domain <domain>              Base public domain, e.g. ponkotu.mydns.jp
+  --domain <domain>              Base public domain, e.g. sample.com
   --root-host <host>             Root host served by WordPress (default: same as domain)
   --email <email>                Email address used by certbot metadata
   --public-scheme <http|https>   Public URL scheme used for generated app URLs
@@ -100,6 +100,11 @@ done
 
 if [[ -z "${DOMAIN}" ]]; then
   echo "--domain is required" >&2
+  exit 1
+fi
+
+if [[ "${STACK_GITHUB_OWNER}" == "your-github-user" ]]; then
+  echo "--owner is required. Set your GitHub owner/user name." >&2
   exit 1
 fi
 

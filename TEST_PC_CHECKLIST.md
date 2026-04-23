@@ -5,7 +5,7 @@
 ## 1. 親 repo を clone
 
 ```bash
-git clone https://github.com/Arrumis/docker-stack-installer.git
+git clone https://github.com/your-github-user/docker-stack-installer.git
 cd docker-stack-installer
 cp stack.env.example stack.env.local
 ```
@@ -78,7 +78,7 @@ cp stack.env.example stack.env.local
 
 確認できる内容:
 
-- `ponkotu.mydns.jp` / `ttrss.*` / `munin.*` の proxy 経由応答
+- `sample.com` / `ttrss.*` / `munin.*` の proxy 経由応答
 - `tategaki.*` / `syncthing.*` / `openvpn.*` / `epgstation.*` の proxy 経由応答
 - `traefik.*` の dashboard 応答
 - Syncthing / OpenVPN / Tategaki のローカル応答

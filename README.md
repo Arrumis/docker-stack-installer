@@ -7,7 +7,7 @@
 最初にインストールする repo はこれです。新しい PC では、まずこの repo を clone してから他の repo を取得します。
 
 ```bash
-git clone https://github.com/Arrumis/docker-stack-installer.git
+git clone https://github.com/your-github-user/docker-stack-installer.git
 cd docker-stack-installer
 cp stack.env.example stack.env.local
 ./scripts/bootstrap-repos.sh
@@ -19,7 +19,9 @@ cp stack.env.example stack.env.local
 Ubuntu 24.04 系のクリーンOSから、そのまま Docker 導入込みで始める場合は次でも入れられます。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --domain ponkotu.mydns.jp
+curl -fsSL https://raw.githubusercontent.com/your-github-user/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
+  --owner your-github-user \
+  --domain sample.com
 ```
 
 この bootstrap は次をまとめて行います。
@@ -28,24 +30,26 @@ curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main
 - `docker-stack-installer` の clone / update
 - sibling repo の clone
 - `.env.local` の初期化
-- `ponkotu.mydns.jp` 前提の基本値投入
+- `sample.com` 前提の基本値投入
 - `install-full-stack.sh` と `verify-stack.sh` の実行
 - 公開条件が揃っていれば `HTTP -> 証明書取得 -> HTTPS` の自動昇格
 
 必要なら追加オプションも使えます。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
-  --domain ponkotu.mydns.jp \
-  --email admin@ponkotu.mydns.jp \
+curl -fsSL https://raw.githubusercontent.com/your-github-user/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
+  --owner your-github-user \
+  --domain sample.com \
+  --email admin@sample.com \
   --exclude-services "infra-munin app-openvpn"
 ```
 
 HTTP のまま止めたい場合は、`--skip-https` を付けます。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
-  --domain ponkotu.mydns.jp \
+curl -fsSL https://raw.githubusercontent.com/your-github-user/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
+  --owner your-github-user \
+  --domain sample.com \
   --skip-https
 ```
 
@@ -117,7 +121,7 @@ cp stack.env.example stack.env.local
 
 ```bash
 STACK_ROOT=/path/to/workspace
-STACK_GITHUB_OWNER=Arrumis
+STACK_GITHUB_OWNER=your-github-user
 CLONE_PROTOCOL=https
 SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpress app-ttrss app-syncthing app-openvpn app-mirakurun-epgstation"
 AUTO_ENABLE_HTTPS=1
@@ -173,9 +177,9 @@ cp stack.service.env.example stack.service.env.local
 書式は `サービス名を大文字化して __ を付ける` 形です。
 
 ```bash
-INFRA_REVERSE_PROXY__DOMAIN=ponkotu.mydns.jp
+INFRA_REVERSE_PROXY__DOMAIN=sample.com
 APP_WORDPRESS__APP_PORT=8080
-APP_TTRSS__TTRSS_SELF_URL_PATH=https://ttrss.ponkotu.mydns.jp/tt-rss/
+APP_TTRSS__TTRSS_SELF_URL_PATH=https://ttrss.sample.com/tt-rss/
 ```
 
 永続データをまとめて別ディスクへ置きたい場合は、次のような一括指定も使えます。
@@ -320,16 +324,16 @@ Basic 認証がかかる `munin` `mirakurun` `epgrec` `epgstation` `traefik` に
 
 手元に別回線がなく、外からの到達確認ができない場合は、GitHub Actions の `Public Endpoint Check` を使えます。これは GitHub の外部 runner から次を確認します。
 
-- `https://ponkotu.mydns.jp/`
-- `https://ttrss.ponkotu.mydns.jp/tt-rss/`
-- `https://munin.ponkotu.mydns.jp/`
-- `https://tategaki.ponkotu.mydns.jp/`
-- `https://syncthing.ponkotu.mydns.jp/`
-- `https://openvpn.ponkotu.mydns.jp/`
-- `https://traefik.ponkotu.mydns.jp/dashboard/`
-- `https://mirakurun.ponkotu.mydns.jp/`
-- `https://epgrec.ponkotu.mydns.jp/`
-- `https://epgstation.ponkotu.mydns.jp/`
+- `https://sample.com/`
+- `https://ttrss.sample.com/tt-rss/`
+- `https://munin.sample.com/`
+- `https://tategaki.sample.com/`
+- `https://syncthing.sample.com/`
+- `https://openvpn.sample.com/`
+- `https://traefik.sample.com/dashboard/`
+- `https://mirakurun.sample.com/`
+- `https://epgrec.sample.com/`
+- `https://epgstation.sample.com/`
 
 手元から試す場合は:
 
