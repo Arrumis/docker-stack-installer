@@ -22,6 +22,12 @@ cp stack.env.example stack.env.local
 ./scripts/up-selected.sh
 ```
 
+ひととおり自動で進めたい場合は、親 repo からまとめて実行できます。
+
+```bash
+./scripts/install-full-stack.sh
+```
+
 ## 役割
 
 - 各サービス repo の配置確認
@@ -120,6 +126,18 @@ SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpr
 
 ```bash
 ./scripts/up-selected.sh
+```
+
+検証で通した推奨順に、bootstrap / env 初期化 / doctor / layout check / 起動までまとめて流す場合:
+
+```bash
+./scripts/install-full-stack.sh
+```
+
+すでに repo と `.env.local` が揃っている場合は、前段を飛ばして起動だけできます。
+
+```bash
+./scripts/install-full-stack.sh --skip-bootstrap --skip-init-env --skip-doctor --skip-check
 ```
 
 特定サービスだけ起動する場合:

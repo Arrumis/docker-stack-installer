@@ -1,11 +1,11 @@
-# service_name	repo_dir	env_file	legacy_compose_file(optional)
-infra-reverse-proxy	infra-reverse-proxy	.env.local
-infra-fail2ban	infra-fail2ban	.env.local
-infra-munin	infra-munin	.env.local
-app-tategaki	app-tategaki	.env.local
-app-wordpress	app-wordpress	.env.local
-app-ttrss	app-ttrss	.env.local
-app-syncthing	app-syncthing	.env.local
-app-openvpn	app-openvpn	.env.local
-app-txtmiru-with-narourb	app-txtmiru-with-narourb	.env.local
-app-mirakurun-epgstation	app-mirakurun-epgstation	.env.local
+# service_name	repo_dir	env_file	compose_override(optional)	legacy_compose_file(optional)
+infra-reverse-proxy	infra-reverse-proxy	.env.local		
+app-wordpress	app-wordpress	.env.local		
+app-ttrss	app-ttrss	.env.local		
+infra-fail2ban	infra-fail2ban	.env.local		
+infra-munin	infra-munin	.env.local		
+app-syncthing	app-syncthing	.env.local		
+app-openvpn	app-openvpn	.env.local		
+app-tategaki	app-tategaki	.env.local		
+app-txtmiru-with-narourb	app-txtmiru-with-narourb	.env.local		
+app-mirakurun-epgstation	app-mirakurun-epgstation	.env.local	compose.hardware.example.yaml	

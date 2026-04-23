@@ -37,6 +37,11 @@ service_env_file() {
   resolve_service_row "${service_name}" | awk -F '\t' '{ print $3 }'
 }
 
+service_compose_override_file() {
+  local service_name="$1"
+  resolve_service_row "${service_name}" | awk -F '\t' '{ print $4 }'
+}
+
 service_legacy_compose_file() {
   local service_name="$1"
   if [[ -f "${LEGACY_SERVICES_FILE}" ]]; then
@@ -44,7 +49,7 @@ service_legacy_compose_file() {
     return 0
   fi
 
-  resolve_service_row "${service_name}" | awk -F '\t' '{ print $4 }'
+  resolve_service_row "${service_name}" | awk -F '\t' '{ print $5 }'
 }
 
 service_abs_dir() {
@@ -63,14 +68,23 @@ service_compose_args() {
   local service_name="$1"
   local service_dir
   local env_file
+  local compose_override
 
   service_dir="$(service_abs_dir "${service_name}")"
   env_file="$(service_env_file "${service_name}")"
+  compose_override="$(service_compose_override_file "${service_name}")"
 
   if [[ -n "${env_file}" && -f "${service_dir}/${env_file}" ]]; then
-    printf -- "-f\n%s\n--env-file\n%s\n" "${service_dir}/compose.yaml" "${service_dir}/${env_file}"
+    printf -- "-f\n%s\n" "${service_dir}/compose.yaml"
+    if [[ -n "${compose_override}" && -f "${service_dir}/${compose_override}" ]]; then
+      printf -- "-f\n%s\n" "${service_dir}/${compose_override}"
+    fi
+    printf -- "--env-file\n%s\n" "${service_dir}/${env_file}"
   else
     printf -- "-f\n%s\n" "${service_dir}/compose.yaml"
+    if [[ -n "${compose_override}" && -f "${service_dir}/${compose_override}" ]]; then
+      printf -- "-f\n%s\n" "${service_dir}/${compose_override}"
+    fi
   fi
 }
 
