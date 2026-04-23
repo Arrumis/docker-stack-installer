@@ -80,6 +80,107 @@ service_default_data_subdir() {
   esac
 }
 
+apply_unified_global_layout_for_service() {
+  local service_name="$1"
+  local service_dir
+  local env_file
+  local domain
+  local root_host
+  local public_scheme
+  local letsencrypt_email
+  local timezone
+  local puid
+  local pgid
+  local basic_auth_user
+  local basic_auth_password
+
+  [[ -f "${UNIFIED_ENV_FILE}" ]] || return 0
+
+  service_dir="$(service_abs_dir "${service_name}")"
+  env_file="$(service_env_file "${service_name}")"
+  [[ -n "${env_file}" ]] || return 0
+  [[ -f "${service_dir}/${env_file}" ]] || return 0
+
+  domain="${GLOBAL__DOMAIN:-}"
+  root_host="${GLOBAL__ROOT_HOST:-${domain}}"
+  public_scheme="${GLOBAL__PUBLIC_SCHEME:-https}"
+  letsencrypt_email="${GLOBAL__LETSENCRYPT_EMAIL:-}"
+  timezone="${GLOBAL__TZ:-}"
+  puid="${GLOBAL__PUID:-}"
+  pgid="${GLOBAL__PGID:-}"
+  basic_auth_user="${GLOBAL__BASIC_AUTH_USER:-}"
+  basic_auth_password="${GLOBAL__BASIC_AUTH_PASSWORD:-}"
+
+  if [[ -z "${letsencrypt_email}" && -n "${domain}" ]]; then
+    letsencrypt_email="admin@${domain}"
+  fi
+
+  case "${service_name}" in
+    infra-reverse-proxy)
+      if [[ -n "${domain}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "DOMAIN" "${domain}"
+        env_set_file "${service_dir}/${env_file}" "ROOT_HOST" "${root_host}"
+        env_set_file "${service_dir}/${env_file}" "TTRSS_HOST" "ttrss.${domain}"
+        env_set_file "${service_dir}/${env_file}" "MUNIN_HOST" "munin.${domain}"
+        env_set_file "${service_dir}/${env_file}" "TATEGAKI_HOST" "tategaki.${domain}"
+        env_set_file "${service_dir}/${env_file}" "SYNCTHING_HOST" "syncthing.${domain}"
+        env_set_file "${service_dir}/${env_file}" "OPENVPN_HOST" "openvpn.${domain}"
+        env_set_file "${service_dir}/${env_file}" "TRAEFIK_HOST" "traefik.${domain}"
+        env_set_file "${service_dir}/${env_file}" "MIRAKURUN_HOST" "mirakurun.${domain}"
+        env_set_file "${service_dir}/${env_file}" "EPGREC_HOST" "epgrec.${domain}"
+        env_set_file "${service_dir}/${env_file}" "EPGSTATION_HOST" "epgstation.${domain}"
+      fi
+      if [[ -n "${letsencrypt_email}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "LETSENCRYPT_EMAIL" "${letsencrypt_email}"
+      fi
+      if [[ -n "${basic_auth_user}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "BASIC_AUTH_USER" "${basic_auth_user}"
+      fi
+      if [[ -n "${basic_auth_password}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "BASIC_AUTH_PASSWORD" "${basic_auth_password}"
+      fi
+      if [[ -n "${timezone}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "TZ" "${timezone}"
+      fi
+      ;;
+    app-ttrss)
+      if [[ -n "${domain}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "TTRSS_SELF_URL_PATH" "${public_scheme}://ttrss.${domain}/tt-rss/"
+      fi
+      if [[ -n "${timezone}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "TZ" "${timezone}"
+      fi
+      ;;
+    app-syncthing|app-openvpn)
+      if [[ -n "${puid}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "PUID" "${puid}"
+      fi
+      if [[ -n "${pgid}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "PGID" "${pgid}"
+      fi
+      if [[ -n "${timezone}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "TZ" "${timezone}"
+      fi
+      ;;
+    app-mirakurun-epgstation)
+      if [[ -n "${puid}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "EPGSTATION_UID" "${puid}"
+      fi
+      if [[ -n "${pgid}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "EPGSTATION_GID" "${pgid}"
+      fi
+      if [[ -n "${timezone}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "TZ" "${timezone}"
+      fi
+      ;;
+    infra-fail2ban|infra-munin|app-tategaki|app-wordpress)
+      if [[ -n "${timezone}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "TZ" "${timezone}"
+      fi
+      ;;
+  esac
+}
+
 apply_unified_data_layout_for_service() {
   local service_name="$1"
   local service_dir
@@ -172,6 +273,7 @@ apply_unified_overrides_for_service() {
   [[ -n "${env_file}" ]] || return 0
   [[ -f "${service_dir}/${env_file}" ]] || return 0
 
+  apply_unified_global_layout_for_service "${service_name}"
   apply_unified_data_layout_for_service "${service_name}"
 
   prefix="$(service_env_prefix "${service_name}")__"

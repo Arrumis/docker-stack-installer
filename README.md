@@ -167,6 +167,7 @@ EXCLUDED_SERVICES="infra-munin app-openvpn"
 - 書いていない項目は、各 service repo の `.env.local` をそのまま使います
 - つまり「よく変える値だけを親側へ集約する」ためのファイルです
 - 永続データの保存先も、ここから一括指定できます
+- `GLOBAL__...` を使うと、同じ値を複数サービスへ自動で配れます
 
 初回は次の雛形から作れます。
 
@@ -180,6 +181,40 @@ cp stack.service.env.example stack.service.env.local
 INFRA_REVERSE_PROXY__DOMAIN=sample.com
 APP_WORDPRESS__APP_PORT=8080
 APP_TTRSS__TTRSS_SELF_URL_PATH=https://ttrss.sample.com/tt-rss/
+```
+
+「できるだけ 1 回だけ入力したい」なら、まずは `GLOBAL__...` を使うのがおすすめです。
+
+```bash
+GLOBAL__DOMAIN=sample.com
+GLOBAL__ROOT_HOST=sample.com
+GLOBAL__PUBLIC_SCHEME=https
+GLOBAL__LETSENCRYPT_EMAIL=admin@sample.com
+GLOBAL__BASIC_AUTH_USER=admin
+GLOBAL__BASIC_AUTH_PASSWORD=change-me
+GLOBAL__TZ=Asia/Tokyo
+GLOBAL__PUID=1000
+GLOBAL__PGID=1000
+GLOBAL__HOST_DATA_ROOT=/srv/docker-data
+GLOBAL__RECORDED_ROOT=/srv/docker-recorded
+```
+
+これだけで、主に次が自動反映されます。
+
+- reverse proxy の各ホスト名
+- ttrss の `TTRSS_SELF_URL_PATH`
+- munin / mirakurun / epgrec / epgstation / traefik の Basic 認証
+- 各サービスの `TZ`
+- Syncthing / OpenVPN の `PUID` `PGID`
+- EPGStation の `EPGSTATION_UID` `EPGSTATION_GID`
+- 各サービスの永続データ保存先
+
+そのうえで、「ここだけ例外にしたい」ものだけを個別に足します。
+
+```bash
+APP_WORDPRESS__APP_PORT=8080
+APP_MIRAKURUN_EPGSTATION__DATA_SUBDIR=tv
+APP_MIRAKURUN_EPGSTATION__RECORDED_SUBDIR=tv-recorded
 ```
 
 永続データをまとめて別ディスクへ置きたい場合は、次のような一括指定も使えます。
