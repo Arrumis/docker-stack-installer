@@ -30,6 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main
 - `.env.local` の初期化
 - `ponkotu.mydns.jp` 前提の基本値投入
 - `install-full-stack.sh` と `verify-stack.sh` の実行
+- 公開条件が揃っていれば `HTTP -> 証明書取得 -> HTTPS` の自動昇格
 
 必要なら追加オプションも使えます。
 
@@ -38,6 +39,14 @@ curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main
   --domain ponkotu.mydns.jp \
   --email admin@ponkotu.mydns.jp \
   --exclude-services "infra-munin app-openvpn"
+```
+
+HTTP のまま止めたい場合は、`--skip-https` を付けます。
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
+  --domain ponkotu.mydns.jp \
+  --skip-https
 ```
 
 そのあと、各 repo の `.env.local` を環境に合わせて調整し、まとめて起動します。
@@ -95,6 +104,7 @@ STACK_ROOT=/path/to/workspace
 STACK_GITHUB_OWNER=Arrumis
 CLONE_PROTOCOL=https
 SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpress app-ttrss app-syncthing app-openvpn app-mirakurun-epgstation"
+AUTO_ENABLE_HTTPS=1
 ```
 
 `CLONE_PROTOCOL` は `https` か `ssh` を使えます。
@@ -106,6 +116,8 @@ EXCLUDED_SERVICES="infra-munin app-openvpn"
 ```
 
 この設定は `bootstrap-repos.sh` `init-env-files.sh` `check-layout.sh` `install-full-stack.sh` `up-selected.sh` `verify-stack.sh` の既定動作に反映されます。
+
+`AUTO_ENABLE_HTTPS=1` のときは、`infra-reverse-proxy` を含む一括起動の最後に `request-certificates.sh` を自動実行します。証明書取得に失敗した場合は導入全体は止めず、そのまま HTTP モードを維持します。
 
 ## リポジトリ取得 / 更新
 

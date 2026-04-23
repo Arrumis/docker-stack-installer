@@ -10,6 +10,7 @@ LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-}"
 PUBLIC_SCHEME="${PUBLIC_SCHEME:-http}"
 EXCLUDED_SERVICES="${EXCLUDED_SERVICES:-}"
 OPENVPN_ADMIN_PASSWORD="${OPENVPN_ADMIN_PASSWORD:-}"
+AUTO_ENABLE_HTTPS="${AUTO_ENABLE_HTTPS:-1}"
 INSTALLER_DIR="${INSTALLER_DIR:-${STACK_ROOT}/docker-stack-installer}"
 SKIP_INSTALL="${SKIP_INSTALL:-0}"
 SKIP_VERIFY="${SKIP_VERIFY:-0}"
@@ -28,6 +29,7 @@ Options:
   --protocol <https|ssh>         Clone protocol for sibling repos
   --exclude-services <list>      Space-separated services excluded from default runs
   --openvpn-admin-password <pw>  OpenVPN admin password to store in .env.local
+  --skip-https                   Do not auto-upgrade the reverse proxy to HTTPS
   --skip-install                 Stop after repo/bootstrap/env preparation
   --skip-verify                  Skip final verify-stack.sh
 EOF
@@ -71,6 +73,10 @@ while [[ $# -gt 0 ]]; do
     --openvpn-admin-password)
       OPENVPN_ADMIN_PASSWORD="$2"
       shift 2
+      ;;
+    --skip-https)
+      AUTO_ENABLE_HTTPS=0
+      shift
       ;;
     --skip-install)
       SKIP_INSTALL=1
@@ -137,6 +143,7 @@ STACK_ROOT=${STACK_ROOT}
 STACK_GITHUB_OWNER=${STACK_GITHUB_OWNER}
 CLONE_PROTOCOL=${CLONE_PROTOCOL}
 EXCLUDED_SERVICES="${EXCLUDED_SERVICES}"
+AUTO_ENABLE_HTTPS=${AUTO_ENABLE_HTTPS}
 EOF
 
 run_with_docker_group() {

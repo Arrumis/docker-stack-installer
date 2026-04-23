@@ -144,4 +144,6 @@ for service_name in "${target_services[@]}"; do
   postinstall_service "${service_name}"
 done
 
+"${SCRIPT_DIR}/enable-https-if-possible.sh" "${target_services[@]}"
+
 echo "Full stack install finished for: ${target_services[*]}"
