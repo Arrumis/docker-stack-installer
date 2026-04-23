@@ -44,13 +44,15 @@ env_value() {
 
   if [[ -n "${env_file}" && -f "${service_dir}/${env_file}" ]]; then
     local value
-    value="$((awk -F '=' -v target="${key}" '
+    value="$(
+      awk -F '=' -v target="${key}" '
         $0 !~ /^[[:space:]]*#/ && $1 == target {
           sub(/^[^=]*=/, "", $0)
           print $0
           exit
         }
-      ' "${service_dir}/${env_file}"))"
+      ' "${service_dir}/${env_file}"
+    )"
     if [[ -n "${value}" ]]; then
       printf '%s\n' "${value}"
       return 0

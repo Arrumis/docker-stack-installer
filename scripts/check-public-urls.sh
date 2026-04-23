@@ -19,14 +19,16 @@ env_value() {
   fi
 
   local value
-  value="$((awk -F '=' -v target="${key}" '
+  value="$(
+    awk -F '=' -v target="${key}" '
       $0 !~ /^[[:space:]]*#/ && $1 == target {
         sub(/^[^=]*=/, "", $0)
         gsub(/^"|"$/, "", $0)
         print $0
         exit
       }
-    ' "${file_path}"))"
+    ' "${file_path}"
+  )"
 
   if [[ -n "${value}" ]]; then
     printf '%s\n' "${value}"
