@@ -111,6 +111,18 @@ proxy_check_http() {
   curl -fsSI --resolve "${host}:80:127.0.0.1" "http://${host}${path}"
 }
 
+proxy_check_https_get() {
+  local host="$1"
+  local path="${2:-/}"
+  curl -kfsS --resolve "${host}:443:127.0.0.1" "https://${host}${path}"
+}
+
+proxy_check_http_get() {
+  local host="$1"
+  local path="${2:-/}"
+  curl -fsS --resolve "${host}:80:127.0.0.1" "http://${host}${path}"
+}
+
 verify_reverse_proxy() {
   local domain
   local root_host
@@ -159,7 +171,7 @@ verify_reverse_proxy() {
     if service_requested "app-openvpn"; then
       check_curl "proxy openvpn https" proxy_check_https "${openvpn_host}" /
     fi
-    check_curl "proxy traefik https" proxy_check_https "${traefik_host}" /dashboard/
+    check_curl "proxy traefik https" proxy_check_https_get "${traefik_host}" /dashboard/
     if service_requested "app-mirakurun-epgstation"; then
       check_curl_with_retry "proxy mirakurun https" 30 proxy_check_https "${mirakurun_host}" /
       check_curl_with_retry "proxy epgrec https" 30 proxy_check_https "${epgrec_host}" /
@@ -184,7 +196,7 @@ verify_reverse_proxy() {
     if service_requested "app-openvpn"; then
       check_curl "proxy openvpn http" proxy_check_http "${openvpn_host}" /
     fi
-    check_curl "proxy traefik http" proxy_check_http "${traefik_host}" /dashboard/
+    check_curl "proxy traefik http" proxy_check_http_get "${traefik_host}" /dashboard/
     if service_requested "app-mirakurun-epgstation"; then
       check_curl_with_retry "proxy mirakurun http" 30 proxy_check_http "${mirakurun_host}" /
       check_curl_with_retry "proxy epgrec http" 30 proxy_check_http "${epgrec_host}" /

@@ -41,7 +41,7 @@ check_url() {
   local label="$1"
   local url="$2"
 
-  if curl -fsSIL --max-time 20 --retry 3 --retry-delay 2 --retry-connrefused "${url}" >/dev/null; then
+  if curl -fsSL --max-time 20 --retry 3 --retry-delay 2 --retry-connrefused "${url}" >/dev/null; then
     echo "OK ${label}: ${url}"
   else
     echo "NG ${label}: ${url}"
