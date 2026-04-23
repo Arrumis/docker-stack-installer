@@ -1,6 +1,7 @@
 # service_name	repo_dir	env_file
 infra-reverse-proxy	infra-reverse-proxy	.env.local
 infra-fail2ban	infra-fail2ban	.env.local
+infra-munin	infra-munin	.env.local
 app-tategaki	app-tategaki	.env.local
 app-wordpress	app-wordpress	.env.local
 app-ttrss	app-ttrss	.env.local

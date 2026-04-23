@@ -16,6 +16,7 @@
 
 - `infra-reverse-proxy`
 - `infra-fail2ban`
+- `infra-munin`
 
 アプリ:
 
@@ -39,7 +40,7 @@ cp stack.env.example stack.env.local
 
 ```bash
 STACK_ROOT=/home/hiyori2023
-SERVICES="infra-reverse-proxy infra-fail2ban app-tategaki app-wordpress app-ttrss app-syncthing app-openvpn app-txtmiru-with-narourb app-mirakurun-epgstation"
+SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpress app-ttrss app-syncthing app-openvpn app-txtmiru-with-narourb app-mirakurun-epgstation"
 ```
 
 ## レイアウト確認
