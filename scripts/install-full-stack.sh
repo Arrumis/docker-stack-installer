@@ -87,6 +87,9 @@ preinstall_service() {
       run_service_script_if_present "${service_name}" "scripts/init-layout.sh"
       ;;
     app-wordpress|app-ttrss|app-syncthing|app-openvpn|app-tategaki|app-txtmiru-with-narourb|app-mirakurun-epgstation)
+      if [[ "${service_name}" == "app-mirakurun-epgstation" ]]; then
+        run_service_script_if_present "${service_name}" "scripts/prepare-host.sh"
+      fi
       run_service_script_if_present "${service_name}" "scripts/init-data-dirs.sh"
       ;;
   esac

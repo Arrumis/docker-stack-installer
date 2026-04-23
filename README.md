@@ -28,6 +28,8 @@ cp stack.env.example stack.env.local
 ./scripts/install-full-stack.sh
 ```
 
+`app-mirakurun-epgstation` を含める場合は、旧 `mirakurun.sh` から移したホスト準備スクリプトも実行されます。ここでは `sudo apt-get install` と `pcscd` 停止が入るため、録画環境だけはホスト側変更を伴います。
+
 ## 役割
 
 - 各サービス repo の配置確認
