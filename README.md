@@ -119,6 +119,11 @@ EXCLUDED_SERVICES="infra-munin app-openvpn"
 
 `AUTO_ENABLE_HTTPS=1` のときは、`infra-reverse-proxy` を含む一括起動の最後に `request-certificates.sh` を自動実行します。現在は Traefik 自身が ACME `HTTP-01` を行うため、別の `certbot` コンテナは使いません。
 
+録画系と管理系の公開入口には Basic 認証が入ります。初期資格情報は `configure-default-envs.sh` が `infra-reverse-proxy/.env.local` に保存します。
+
+- `BASIC_AUTH_USER`
+- `BASIC_AUTH_PASSWORD`
+
 ## リポジトリ取得 / 更新
 
 新しい PC では、まず sibling repo をまとめて clone できます。
@@ -203,6 +208,8 @@ EXCLUDED_SERVICES="infra-munin app-openvpn"
 ```
 
 `infra-reverse-proxy` の Traefik が `443` を持っていれば HTTPS で検証し、まだ証明書がない新規マシンでは HTTP で検証します。
+
+Basic 認証がかかる `munin` `mirakurun` `epgrec` `epgstation` `traefik` については、`verify-stack.sh` が `infra-reverse-proxy/.env.local` の資格情報を自動で使います。
 
 手元に別回線がなく、外からの到達確認ができない場合は、GitHub Actions の `Public Endpoint Check` を使えます。これは GitHub の外部 runner から次を確認します。
 

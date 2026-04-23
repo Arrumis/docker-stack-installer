@@ -11,6 +11,8 @@ LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-}"
 PUBLIC_SCHEME="${PUBLIC_SCHEME:-http}"
 OPENVPN_ADMIN_PASSWORD="${OPENVPN_ADMIN_PASSWORD:-}"
 EXCLUDED_SERVICES_OVERRIDE="${EXCLUDED_SERVICES_OVERRIDE:-}"
+BASIC_AUTH_USER="${BASIC_AUTH_USER:-admin}"
+BASIC_AUTH_PASSWORD="${BASIC_AUTH_PASSWORD:-}"
 
 usage() {
   cat <<'EOF'
@@ -22,6 +24,8 @@ Options:
   --email <email>                Email address used by certbot metadata
   --public-scheme <http|https>   Public URL scheme used for generated app URLs
   --openvpn-admin-password <pw>  OpenVPN admin password to store in .env.local
+  --basic-auth-user <user>       Basic auth user for protected proxy routes
+  --basic-auth-password <pw>     Basic auth password for protected proxy routes
   --excluded-services <list>     Space-separated services to store in stack.env.local
 EOF
 }
@@ -46,6 +50,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --openvpn-admin-password)
       OPENVPN_ADMIN_PASSWORD="$2"
+      shift 2
+      ;;
+    --basic-auth-user)
+      BASIC_AUTH_USER="$2"
+      shift 2
+      ;;
+    --basic-auth-password)
+      BASIC_AUTH_PASSWORD="$2"
       shift 2
       ;;
     --excluded-services)
@@ -80,6 +92,8 @@ random_secret() {
     printf '\n'
   fi
 }
+
+BASIC_AUTH_PASSWORD="${BASIC_AUTH_PASSWORD:-$(random_secret)}"
 
 env_get() {
   local file_path="$1"
@@ -178,6 +192,8 @@ env_set "${reverse_proxy_env}" "MIRAKURUN_UPSTREAM" "127.0.0.1:40772"
 env_set "${reverse_proxy_env}" "EPGSTATION_UPSTREAM" "127.0.0.1:8888"
 env_set "${reverse_proxy_env}" "TLS_CERT_NAME" "${ROOT_HOST}"
 env_set "${reverse_proxy_env}" "LETSENCRYPT_EMAIL" "${LETSENCRYPT_EMAIL}"
+env_set "${reverse_proxy_env}" "BASIC_AUTH_USER" "${BASIC_AUTH_USER}"
+env_set_if_placeholder "${reverse_proxy_env}" "BASIC_AUTH_PASSWORD" "${BASIC_AUTH_PASSWORD}"
 
 wordpress_env="$(service_abs_dir "app-wordpress")/$(service_env_file "app-wordpress")"
 env_set_if_placeholder "${wordpress_env}" "WORDPRESS_DB_PASSWORD" "$(random_secret)"
@@ -218,4 +234,5 @@ Configured default env files for:
 - host interface: ${HOST_IFACE:-unknown}
 - host ip: ${HOST_IP:-unknown}
 - munin upstream: ${MUNIN_PROXY_UPSTREAM}
+- basic auth user: ${BASIC_AUTH_USER}
 EOF

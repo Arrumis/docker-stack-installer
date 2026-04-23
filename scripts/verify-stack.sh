@@ -18,6 +18,8 @@ fi
 verify_status=0
 VERIFY_RETRY_DELAY="${VERIFY_RETRY_DELAY:-2}"
 mapfile -t target_services < <(list_target_services "$@")
+PROTECTED_BASIC_AUTH_USER=""
+PROTECTED_BASIC_AUTH_PASSWORD=""
 
 service_requested() {
   local target="$1"
@@ -123,6 +125,54 @@ proxy_check_http_get() {
   curl -fsS --resolve "${host}:80:127.0.0.1" "http://${host}${path}"
 }
 
+proxy_check_https_auth() {
+  local host="$1"
+  local path="${2:-/}"
+  local auth_args=()
+
+  if [[ -n "${PROTECTED_BASIC_AUTH_USER}" && -n "${PROTECTED_BASIC_AUTH_PASSWORD}" ]]; then
+    auth_args=(--user "${PROTECTED_BASIC_AUTH_USER}:${PROTECTED_BASIC_AUTH_PASSWORD}")
+  fi
+
+  curl -kfsSI "${auth_args[@]}" --resolve "${host}:443:127.0.0.1" "https://${host}${path}"
+}
+
+proxy_check_https_auth_get() {
+  local host="$1"
+  local path="${2:-/}"
+  local auth_args=()
+
+  if [[ -n "${PROTECTED_BASIC_AUTH_USER}" && -n "${PROTECTED_BASIC_AUTH_PASSWORD}" ]]; then
+    auth_args=(--user "${PROTECTED_BASIC_AUTH_USER}:${PROTECTED_BASIC_AUTH_PASSWORD}")
+  fi
+
+  curl -kfsS "${auth_args[@]}" --resolve "${host}:443:127.0.0.1" "https://${host}${path}"
+}
+
+proxy_check_http_auth() {
+  local host="$1"
+  local path="${2:-/}"
+  local auth_args=()
+
+  if [[ -n "${PROTECTED_BASIC_AUTH_USER}" && -n "${PROTECTED_BASIC_AUTH_PASSWORD}" ]]; then
+    auth_args=(--user "${PROTECTED_BASIC_AUTH_USER}:${PROTECTED_BASIC_AUTH_PASSWORD}")
+  fi
+
+  curl -fsSI "${auth_args[@]}" --resolve "${host}:80:127.0.0.1" "http://${host}${path}"
+}
+
+proxy_check_http_auth_get() {
+  local host="$1"
+  local path="${2:-/}"
+  local auth_args=()
+
+  if [[ -n "${PROTECTED_BASIC_AUTH_USER}" && -n "${PROTECTED_BASIC_AUTH_PASSWORD}" ]]; then
+    auth_args=(--user "${PROTECTED_BASIC_AUTH_USER}:${PROTECTED_BASIC_AUTH_PASSWORD}")
+  fi
+
+  curl -fsS "${auth_args[@]}" --resolve "${host}:80:127.0.0.1" "http://${host}${path}"
+}
+
 verify_reverse_proxy() {
   local domain
   local root_host
@@ -147,6 +197,8 @@ verify_reverse_proxy() {
   mirakurun_host="$(env_value "infra-reverse-proxy" "MIRAKURUN_HOST" "mirakurun.${domain}")"
   epgrec_host="$(env_value "infra-reverse-proxy" "EPGREC_HOST" "epgrec.${domain}")"
   epgstation_host="$(env_value "infra-reverse-proxy" "EPGSTATION_HOST" "${epgrec_host}")"
+  PROTECTED_BASIC_AUTH_USER="$(env_value "infra-reverse-proxy" "BASIC_AUTH_USER" "")"
+  PROTECTED_BASIC_AUTH_PASSWORD="$(env_value "infra-reverse-proxy" "BASIC_AUTH_PASSWORD" "")"
 
   if ! service_requested "infra-reverse-proxy"; then
     return 0
@@ -160,7 +212,7 @@ verify_reverse_proxy() {
       check_curl "proxy ttrss https" proxy_check_https "${ttrss_host}" /tt-rss/
     fi
     if service_requested "infra-munin"; then
-      check_curl "proxy munin https" proxy_check_https "${munin_host}" /
+      check_curl_with_retry "proxy munin https" 10 proxy_check_https_auth "${munin_host}" /
     fi
     if service_requested "app-tategaki"; then
       check_curl "proxy tategaki https" proxy_check_https "${tategaki_host}" /
@@ -171,11 +223,11 @@ verify_reverse_proxy() {
     if service_requested "app-openvpn"; then
       check_curl "proxy openvpn https" proxy_check_https "${openvpn_host}" /
     fi
-    check_curl "proxy traefik https" proxy_check_https_get "${traefik_host}" /dashboard/
+    check_curl_with_retry "proxy traefik https" 10 proxy_check_https_auth_get "${traefik_host}" /dashboard/
     if service_requested "app-mirakurun-epgstation"; then
-      check_curl_with_retry "proxy mirakurun https" 30 proxy_check_https "${mirakurun_host}" /
-      check_curl_with_retry "proxy epgrec https" 30 proxy_check_https "${epgrec_host}" /
-      check_curl_with_retry "proxy epgstation https" 30 proxy_check_https "${epgstation_host}" /
+      check_curl_with_retry "proxy mirakurun https" 30 proxy_check_https_auth "${mirakurun_host}" /
+      check_curl_with_retry "proxy epgrec https" 30 proxy_check_https_auth "${epgrec_host}" /
+      check_curl_with_retry "proxy epgstation https" 30 proxy_check_https_auth "${epgstation_host}" /
     fi
   else
     if service_requested "app-wordpress"; then
@@ -185,7 +237,7 @@ verify_reverse_proxy() {
       check_curl "proxy ttrss http" proxy_check_http "${ttrss_host}" /tt-rss/
     fi
     if service_requested "infra-munin"; then
-      check_curl "proxy munin http" proxy_check_http "${munin_host}" /
+      check_curl_with_retry "proxy munin http" 10 proxy_check_http_auth "${munin_host}" /
     fi
     if service_requested "app-tategaki"; then
       check_curl "proxy tategaki http" proxy_check_http "${tategaki_host}" /
@@ -196,11 +248,11 @@ verify_reverse_proxy() {
     if service_requested "app-openvpn"; then
       check_curl "proxy openvpn http" proxy_check_http "${openvpn_host}" /
     fi
-    check_curl "proxy traefik http" proxy_check_http_get "${traefik_host}" /dashboard/
+    check_curl_with_retry "proxy traefik http" 10 proxy_check_http_auth_get "${traefik_host}" /dashboard/
     if service_requested "app-mirakurun-epgstation"; then
-      check_curl_with_retry "proxy mirakurun http" 30 proxy_check_http "${mirakurun_host}" /
-      check_curl_with_retry "proxy epgrec http" 30 proxy_check_http "${epgrec_host}" /
-      check_curl_with_retry "proxy epgstation http" 30 proxy_check_http "${epgstation_host}" /
+      check_curl_with_retry "proxy mirakurun http" 30 proxy_check_http_auth "${mirakurun_host}" /
+      check_curl_with_retry "proxy epgrec http" 30 proxy_check_http_auth "${epgrec_host}" /
+      check_curl_with_retry "proxy epgstation http" 30 proxy_check_http_auth "${epgstation_host}" /
     fi
   fi
 }
