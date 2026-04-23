@@ -49,6 +49,21 @@ curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main
   --skip-https
 ```
 
+Interlink `myIP` を使う PC では、スタック導入後に別枠で `myip` を入れます。`myip` は回線固有設定なので、Docker スタック本体とは分けています。
+
+```bash
+./scripts/install-myip-pptp.sh \
+  --server 203.141.151.202 \
+  --id mi123456 \
+  --password 'secret' \
+  --fixed-ip 153.124.190.138
+
+sudo systemctl start myip-pptp
+./scripts/check-myip-status.sh
+```
+
+`203.141.151.202` は Interlink FAQ の例です。実契約で発行された VPN サーバーが別なら、その値に置き換えてください。
+
 そのあと、各 repo の `.env.local` を環境に合わせて調整し、まとめて起動します。
 
 ```bash
@@ -228,6 +243,12 @@ Basic 認証がかかる `munin` `mirakurun` `epgrec` `epgstation` `traefik` に
 
 ```bash
 ./scripts/check-public-urls.sh
+```
+
+`myip` 接続の状態だけ確認したい場合は:
+
+```bash
+./scripts/check-myip-status.sh
 ```
 
 ## 切替前確認
