@@ -98,6 +98,11 @@ preinstall_service() {
 postinstall_service() {
   local service_name="$1"
   case "${service_name}" in
+    infra-reverse-proxy)
+      if docker compose -f "$(service_abs_dir "${service_name}")/compose.yaml" --env-file "$(service_abs_dir "${service_name}")/$(service_env_file "${service_name}")" exec -T nginx-proxy nginx -t >/dev/null 2>&1; then
+        docker compose -f "$(service_abs_dir "${service_name}")/compose.yaml" --env-file "$(service_abs_dir "${service_name}")/$(service_env_file "${service_name}")" exec -T nginx-proxy nginx -s reload
+      fi
+      ;;
     app-openvpn)
       run_service_script_if_present "${service_name}" "scripts/set-admin-password.sh"
       ;;
