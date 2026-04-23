@@ -19,16 +19,14 @@ env_value() {
   fi
 
   local value
-  value="$(
-    awk -F '=' -v target="${key}" '
+  value="$((awk -F '=' -v target="${key}" '
       $0 !~ /^[[:space:]]*#/ && $1 == target {
         sub(/^[^=]*=/, "", $0)
         gsub(/^"|"$/, "", $0)
         print $0
         exit
       }
-    ' "${file_path}"
-  )"
+    ' "${file_path}"))"
 
   if [[ -n "${value}" ]]; then
     printf '%s\n' "${value}"
@@ -58,7 +56,8 @@ syncthing_host="$(env_value "${reverse_proxy_env}" "SYNCTHING_HOST" "syncthing.$
 openvpn_host="$(env_value "${reverse_proxy_env}" "OPENVPN_HOST" "openvpn.${domain}")"
 traefik_host="$(env_value "${reverse_proxy_env}" "TRAEFIK_HOST" "traefik.${domain}")"
 mirakurun_host="$(env_value "${reverse_proxy_env}" "MIRAKURUN_HOST" "mirakurun.${domain}")"
-epgstation_host="$(env_value "${reverse_proxy_env}" "EPGREC_HOST" "$(env_value "${reverse_proxy_env}" "EPGSTATION_HOST" "epgrec.${domain}")")"
+epgrec_host="$(env_value "${reverse_proxy_env}" "EPGREC_HOST" "epgrec.${domain}")"
+epgstation_host="$(env_value "${reverse_proxy_env}" "EPGSTATION_HOST" "${epgrec_host}")"
 
 check_url "wordpress" "https://${root_host}/"
 check_url "ttrss" "https://${ttrss_host}/tt-rss/"
@@ -66,6 +65,7 @@ check_url "munin" "https://${munin_host}/"
 check_url "tategaki" "https://${tategaki_host}/"
 check_url "syncthing" "https://${syncthing_host}/"
 check_url "openvpn" "https://${openvpn_host}/"
-check_url "traefik" "https://${traefik_host}/"
+check_url "traefik" "https://${traefik_host}/dashboard/"
 check_url "mirakurun" "https://${mirakurun_host}/"
+check_url "epgrec" "https://${epgrec_host}/"
 check_url "epgstation" "https://${epgstation_host}/"
