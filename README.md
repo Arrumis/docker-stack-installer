@@ -16,6 +16,30 @@ cp stack.env.example stack.env.local
 ./scripts/smoke-test.sh
 ```
 
+Ubuntu 24.04 系のクリーンOSから、そのまま Docker 導入込みで始める場合は次でも入れられます。
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --domain ponkotu.mydns.jp
+```
+
+この bootstrap は次をまとめて行います。
+
+- `git` `docker.io` `docker-compose-v2` の導入
+- `docker-stack-installer` の clone / update
+- sibling repo の clone
+- `.env.local` の初期化
+- `ponkotu.mydns.jp` 前提の基本値投入
+- `install-full-stack.sh` と `verify-stack.sh` の実行
+
+必要なら追加オプションも使えます。
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
+  --domain ponkotu.mydns.jp \
+  --email admin@ponkotu.mydns.jp \
+  --exclude-services "infra-munin app-openvpn"
+```
+
 そのあと、各 repo の `.env.local` を環境に合わせて調整し、まとめて起動します。
 
 ```bash
