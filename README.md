@@ -1,6 +1,6 @@
 # docker-stack-installer
 
-複数の Docker サービス repo をまとめて確認・起動するための親 repo です。旧 `docker_container_installer_original` のようにテンプレートを大量コピーするのではなく、各 repo を正本として扱う前提に寄せています。
+複数の Docker サービス repo をまとめて確認・起動するための親 repo です。旧 `docker_container_installer_original` のようにテンプレートを大量コピーするのではなく、各 repo を正本として扱う前提に寄せています。公開入口は `infra-reverse-proxy` の `Traefik v2.11` を使います。
 
 ## Quick Start
 
@@ -117,7 +117,7 @@ EXCLUDED_SERVICES="infra-munin app-openvpn"
 
 この設定は `bootstrap-repos.sh` `init-env-files.sh` `check-layout.sh` `install-full-stack.sh` `up-selected.sh` `verify-stack.sh` の既定動作に反映されます。
 
-`AUTO_ENABLE_HTTPS=1` のときは、`infra-reverse-proxy` を含む一括起動の最後に `request-certificates.sh` を自動実行します。証明書取得に失敗した場合は導入全体は止めず、proxy は直前のモードへ自動で戻します。既存 HTTPS がある環境では、追加SANの取得に失敗しても稼働中の HTTPS を壊しません。
+`AUTO_ENABLE_HTTPS=1` のときは、`infra-reverse-proxy` を含む一括起動の最後に `request-certificates.sh` を自動実行します。現在は Traefik 自身が ACME `HTTP-01` を行うため、別の `certbot` コンテナは使いません。
 
 ## リポジトリ取得 / 更新
 
@@ -202,7 +202,7 @@ EXCLUDED_SERVICES="infra-munin app-openvpn"
 ./scripts/verify-stack.sh
 ```
 
-`infra-reverse-proxy` に既存証明書が残っているマシンでは HTTPS で検証し、証明書がまだない新規マシンでは HTTP で検証します。
+`infra-reverse-proxy` の Traefik が `443` を持っていれば HTTPS で検証し、まだ証明書がない新規マシンでは HTTP で検証します。
 
 手元に別回線がなく、外からの到達確認ができない場合は、GitHub Actions の `Public Endpoint Check` を使えます。これは GitHub の外部 runner から次を確認します。
 
@@ -212,7 +212,7 @@ EXCLUDED_SERVICES="infra-munin app-openvpn"
 - `https://tategaki.ponkotu.mydns.jp/`
 - `https://syncthing.ponkotu.mydns.jp/`
 - `https://openvpn.ponkotu.mydns.jp/`
-- `https://traefik.ponkotu.mydns.jp/`
+- `https://traefik.ponkotu.mydns.jp/dashboard/`
 - `https://mirakurun.ponkotu.mydns.jp/`
 - `https://epgrec.ponkotu.mydns.jp/`
 - `https://epgstation.ponkotu.mydns.jp/`

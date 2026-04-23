@@ -30,6 +30,7 @@ cp stack.env.example stack.env.local
 - `docker` と `docker compose` が使える
 - 対象 repo が clone されている
 - `proxy-network` が必要なら存在する
+- `infra-reverse-proxy` は Traefik v2.11 前提で起動する
 
 ## 4. スモークテスト
 
@@ -79,10 +80,11 @@ cp stack.env.example stack.env.local
 
 - `ponkotu.mydns.jp` / `ttrss.*` / `munin.*` の proxy 経由応答
 - `tategaki.*` / `syncthing.*` / `openvpn.*` / `epgstation.*` の proxy 経由応答
+- `traefik.*` の dashboard 応答
 - Syncthing / OpenVPN / Tategaki のローカル応答
 - Mirakurun API / EPGStation のローカル応答
 
-`infra-reverse-proxy/data/letsencrypt/renewal/*.conf` が残っているマシンでは HTTPS を再利用し、証明書がない新規マシンでは HTTP で確認します。
+Traefik が `443` を持っていれば HTTPS を確認し、証明書がまだない新規マシンでは HTTP で確認します。
 
 ## 8. live 環境を置き換える場合
 
