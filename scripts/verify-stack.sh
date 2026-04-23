@@ -44,15 +44,13 @@ env_value() {
 
   if [[ -n "${env_file}" && -f "${service_dir}/${env_file}" ]]; then
     local value
-    value="$(
-      awk -F '=' -v target="${key}" '
+    value="$((awk -F '=' -v target="${key}" '
         $0 !~ /^[[:space:]]*#/ && $1 == target {
           sub(/^[^=]*=/, "", $0)
           print $0
           exit
         }
-      ' "${service_dir}/${env_file}"
-    )"
+      ' "${service_dir}/${env_file}"))"
     if [[ -n "${value}" ]]; then
       printf '%s\n' "${value}"
       return 0
@@ -121,6 +119,7 @@ verify_reverse_proxy() {
   local openvpn_host
   local traefik_host
   local mirakurun_host
+  local epgrec_host
   local epgstation_host
 
   domain="$(env_value "infra-reverse-proxy" "DOMAIN" "example.local")"
@@ -132,7 +131,8 @@ verify_reverse_proxy() {
   openvpn_host="$(env_value "infra-reverse-proxy" "OPENVPN_HOST" "openvpn.${domain}")"
   traefik_host="$(env_value "infra-reverse-proxy" "TRAEFIK_HOST" "traefik.${domain}")"
   mirakurun_host="$(env_value "infra-reverse-proxy" "MIRAKURUN_HOST" "mirakurun.${domain}")"
-  epgstation_host="$(env_value "infra-reverse-proxy" "EPGREC_HOST" "$(env_value "infra-reverse-proxy" "EPGSTATION_HOST" "epgrec.${domain}")")"
+  epgrec_host="$(env_value "infra-reverse-proxy" "EPGREC_HOST" "epgrec.${domain}")"
+  epgstation_host="$(env_value "infra-reverse-proxy" "EPGSTATION_HOST" "${epgrec_host}")"
 
   if ! service_requested "infra-reverse-proxy"; then
     return 0
@@ -157,9 +157,10 @@ verify_reverse_proxy() {
     if service_requested "app-openvpn"; then
       check_curl "proxy openvpn https" proxy_check_https "${openvpn_host}" /
     fi
-    check_curl "proxy traefik https" proxy_check_https "${traefik_host}" /
+    check_curl "proxy traefik https" proxy_check_https "${traefik_host}" /dashboard/
     if service_requested "app-mirakurun-epgstation"; then
       check_curl_with_retry "proxy mirakurun https" 30 proxy_check_https "${mirakurun_host}" /
+      check_curl_with_retry "proxy epgrec https" 30 proxy_check_https "${epgrec_host}" /
       check_curl_with_retry "proxy epgstation https" 30 proxy_check_https "${epgstation_host}" /
     fi
   else
@@ -181,9 +182,10 @@ verify_reverse_proxy() {
     if service_requested "app-openvpn"; then
       check_curl "proxy openvpn http" proxy_check_http "${openvpn_host}" /
     fi
-    check_curl "proxy traefik http" proxy_check_http "${traefik_host}" /
+    check_curl "proxy traefik http" proxy_check_http "${traefik_host}" /dashboard/
     if service_requested "app-mirakurun-epgstation"; then
       check_curl_with_retry "proxy mirakurun http" 30 proxy_check_http "${mirakurun_host}" /
+      check_curl_with_retry "proxy epgrec http" 30 proxy_check_http "${epgrec_host}" /
       check_curl_with_retry "proxy epgstation http" 30 proxy_check_http "${epgstation_host}" /
     fi
   fi
