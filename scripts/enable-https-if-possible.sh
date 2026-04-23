@@ -97,5 +97,5 @@ if (
 
   echo "Automatic HTTPS enablement completed."
 else
-  echo "WARN automatic HTTPS enablement failed; keeping HTTP mode."
+  echo "WARN automatic HTTPS enablement failed; restored previous proxy mode."
 fi
