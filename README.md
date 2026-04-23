@@ -204,6 +204,22 @@ EXCLUDED_SERVICES="infra-munin app-openvpn"
 
 `infra-reverse-proxy` に既存証明書が残っているマシンでは HTTPS で検証し、証明書がまだない新規マシンでは HTTP で検証します。
 
+手元に別回線がなく、外からの到達確認ができない場合は、GitHub Actions の `Public Endpoint Check` を使えます。これは GitHub の外部 runner から次を確認します。
+
+- `https://ponkotu.mydns.jp/`
+- `https://ttrss.ponkotu.mydns.jp/tt-rss/`
+- `https://munin.ponkotu.mydns.jp/`
+- `https://tategaki.ponkotu.mydns.jp/`
+- `https://syncthing.ponkotu.mydns.jp/`
+- `https://openvpn.ponkotu.mydns.jp/`
+- `https://epgstation.ponkotu.mydns.jp/`
+
+手元から試す場合は:
+
+```bash
+./scripts/check-public-urls.sh
+```
+
 ## 切替前確認
 
 既存の live 環境とポートが衝突するかを確認できます。
