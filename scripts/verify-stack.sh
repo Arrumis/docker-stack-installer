@@ -119,6 +119,7 @@ verify_reverse_proxy() {
   local tategaki_host
   local syncthing_host
   local openvpn_host
+  local mirakurun_host
   local epgstation_host
 
   domain="$(env_value "infra-reverse-proxy" "DOMAIN" "example.local")"
@@ -128,7 +129,8 @@ verify_reverse_proxy() {
   tategaki_host="$(env_value "infra-reverse-proxy" "TATEGAKI_HOST" "tategaki.${domain}")"
   syncthing_host="$(env_value "infra-reverse-proxy" "SYNCTHING_HOST" "syncthing.${domain}")"
   openvpn_host="$(env_value "infra-reverse-proxy" "OPENVPN_HOST" "openvpn.${domain}")"
-  epgstation_host="$(env_value "infra-reverse-proxy" "EPGSTATION_HOST" "epgstation.${domain}")"
+  mirakurun_host="$(env_value "infra-reverse-proxy" "MIRAKURUN_HOST" "mirakurun.${domain}")"
+  epgstation_host="$(env_value "infra-reverse-proxy" "EPGREC_HOST" "$(env_value "infra-reverse-proxy" "EPGSTATION_HOST" "epgrec.${domain}")")"
 
   if ! service_requested "infra-reverse-proxy"; then
     return 0
@@ -154,6 +156,7 @@ verify_reverse_proxy() {
       check_curl "proxy openvpn https" proxy_check_https "${openvpn_host}" /
     fi
     if service_requested "app-mirakurun-epgstation"; then
+      check_curl_with_retry "proxy mirakurun https" 30 proxy_check_https "${mirakurun_host}" /
       check_curl_with_retry "proxy epgstation https" 30 proxy_check_https "${epgstation_host}" /
     fi
   else
@@ -176,6 +179,7 @@ verify_reverse_proxy() {
       check_curl "proxy openvpn http" proxy_check_http "${openvpn_host}" /
     fi
     if service_requested "app-mirakurun-epgstation"; then
+      check_curl_with_retry "proxy mirakurun http" 30 proxy_check_http "${mirakurun_host}" /
       check_curl_with_retry "proxy epgstation http" 30 proxy_check_http "${epgstation_host}" /
     fi
   fi
