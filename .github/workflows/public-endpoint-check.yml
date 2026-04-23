@@ -5,8 +5,55 @@ env:
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "17 */6 * * *"
+    inputs:
+      root_host:
+        description: "Root host to check"
+        required: true
+        default: "sample.com"
+      ttrss_host:
+        description: "ttrss host to check"
+        required: true
+        default: "ttrss.sample.com"
+      munin_host:
+        description: "munin host to check"
+        required: true
+        default: "munin.sample.com"
+      tategaki_host:
+        description: "tategaki host to check"
+        required: true
+        default: "tategaki.sample.com"
+      syncthing_host:
+        description: "syncthing host to check"
+        required: true
+        default: "syncthing.sample.com"
+      openvpn_host:
+        description: "openvpn host to check"
+        required: true
+        default: "openvpn.sample.com"
+      traefik_host:
+        description: "traefik host to check"
+        required: true
+        default: "traefik.sample.com"
+      mirakurun_host:
+        description: "mirakurun host to check"
+        required: true
+        default: "mirakurun.sample.com"
+      epgrec_host:
+        description: "epgrec host to check"
+        required: true
+        default: "epgrec.sample.com"
+      epgstation_host:
+        description: "epgstation host to check"
+        required: true
+        default: "epgstation.sample.com"
+      basic_auth_user:
+        description: "Optional basic auth user"
+        required: false
+        default: ""
+      basic_auth_password:
+        description: "Optional basic auth password"
+        required: false
+        default: ""
 
 jobs:
   check:
@@ -27,14 +74,19 @@ jobs:
         run: |
           mkdir -p infra-reverse-proxy
           cat > infra-reverse-proxy/.env.local <<'EOF'
-          DOMAIN=ponkotu.mydns.jp
-          ROOT_HOST=ponkotu.mydns.jp
-          TTRSS_HOST=ttrss.ponkotu.mydns.jp
-          MUNIN_HOST=munin.ponkotu.mydns.jp
-          TATEGAKI_HOST=tategaki.ponkotu.mydns.jp
-          SYNCTHING_HOST=syncthing.ponkotu.mydns.jp
-          OPENVPN_HOST=openvpn.ponkotu.mydns.jp
-          EPGSTATION_HOST=epgstation.ponkotu.mydns.jp
+          DOMAIN=sample.com
+          ROOT_HOST=${{ inputs.root_host }}
+          TTRSS_HOST=${{ inputs.ttrss_host }}
+          MUNIN_HOST=${{ inputs.munin_host }}
+          TATEGAKI_HOST=${{ inputs.tategaki_host }}
+          SYNCTHING_HOST=${{ inputs.syncthing_host }}
+          OPENVPN_HOST=${{ inputs.openvpn_host }}
+          TRAEFIK_HOST=${{ inputs.traefik_host }}
+          MIRAKURUN_HOST=${{ inputs.mirakurun_host }}
+          EPGREC_HOST=${{ inputs.epgrec_host }}
+          EPGSTATION_HOST=${{ inputs.epgstation_host }}
+          BASIC_AUTH_USER=${{ inputs.basic_auth_user }}
+          BASIC_AUTH_PASSWORD=${{ inputs.basic_auth_password }}
           EOF
 
       - name: Check public URLs
