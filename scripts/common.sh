@@ -36,11 +36,62 @@ service_env_file() {
   resolve_service_row "${service_name}" | awk -F '\t' '{ print $3 }'
 }
 
+service_legacy_compose_file() {
+  local service_name="$1"
+  resolve_service_row "${service_name}" | awk -F '\t' '{ print $4 }'
+}
+
 service_abs_dir() {
   local service_name="$1"
   local repo_dir
   repo_dir="$(service_repo_dir "${service_name}")"
   printf '%s/%s\n' "${STACK_ROOT}" "${repo_dir}"
+}
+
+service_compose_file() {
+  local service_name="$1"
+  printf '%s/compose.yaml\n' "$(service_abs_dir "${service_name}")"
+}
+
+service_compose_args() {
+  local service_name="$1"
+  local service_dir
+  local env_file
+
+  service_dir="$(service_abs_dir "${service_name}")"
+  env_file="$(service_env_file "${service_name}")"
+
+  if [[ -n "${env_file}" && -f "${service_dir}/${env_file}" ]]; then
+    printf -- "-f\n%s\n--env-file\n%s\n" "${service_dir}/compose.yaml" "${service_dir}/${env_file}"
+  else
+    printf -- "-f\n%s\n" "${service_dir}/compose.yaml"
+  fi
+}
+
+legacy_compose_args() {
+  local service_name="$1"
+  local legacy_compose
+
+  legacy_compose="$(service_legacy_compose_file "${service_name}")"
+  if [[ -z "${legacy_compose}" || ! -f "${legacy_compose}" ]]; then
+    return 1
+  fi
+
+  printf -- "-f\n%s\n" "${legacy_compose}"
+}
+
+run_new_compose() {
+  local service_name="$1"
+  shift
+  mapfile -t compose_args < <(service_compose_args "${service_name}")
+  docker compose "${compose_args[@]}" "$@"
+}
+
+run_legacy_compose() {
+  local service_name="$1"
+  shift
+  mapfile -t compose_args < <(legacy_compose_args "${service_name}")
+  docker compose "${compose_args[@]}" "$@"
 }
 
 service_repo_url() {

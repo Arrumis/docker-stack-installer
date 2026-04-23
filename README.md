@@ -67,6 +67,23 @@ SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpr
 
 作成後に、各 repo の `.env.local` を環境に合わせて編集します。
 
+## 新PC診断
+
+まず依存コマンド、Docker 権限、repo 配置を確認できます。
+
+```bash
+./scripts/doctor.sh
+```
+
+続けて、各 repo の `compose.yaml` と `.env.local` を使ったスモークテストを行えます。
+
+```bash
+./scripts/smoke-test.sh
+./scripts/smoke-test.sh --pull
+```
+
+詳細な流れは [TEST_PC_CHECKLIST.md](/home/hiyori2023/docker-stack-installer/TEST_PC_CHECKLIST.md:1) にまとめています。
+
 ## レイアウト確認
 
 ```bash
@@ -91,9 +108,47 @@ SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpr
 ./scripts/up-selected.sh app-tategaki app-ttrss
 ```
 
+## 切替前確認
+
+既存の live 環境とポートが衝突するかを確認できます。
+
+```bash
+./scripts/preflight-cutover.sh
+```
+
+特定サービスだけ見る場合:
+
+```bash
+./scripts/preflight-cutover.sh app-wordpress app-ttrss
+```
+
+## 旧構成からの切替
+
+サービス単位で、旧 compose を止めて新 repo を起動する cutover スクリプトを用意しています。
+
+まずは dry-run:
+
+```bash
+./scripts/cutover-service.sh app-wordpress
+```
+
+実行する場合:
+
+```bash
+./scripts/cutover-service.sh --apply app-wordpress
+```
+
+rollback も同様です。
+
+```bash
+./scripts/rollback-to-legacy.sh app-wordpress
+./scripts/rollback-to-legacy.sh --apply app-wordpress
+```
+
 ## 方針
 
 - 正本は各サービス repo
 - 親 repo は orchestration のみ
 - 実データや秘密情報は各 repo の `.env.local` と `data/` 側で管理
 - 新しい PC では `bootstrap-repos.sh` -> `init-env-files.sh` -> 各 `.env.local` 調整 -> `up-selected.sh` の流れで復元する
+- live 環境の切替は `preflight-cutover.sh` で衝突確認してから、`cutover-service.sh --apply <service>` をサービス単位で進める
