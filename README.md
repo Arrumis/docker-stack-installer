@@ -162,6 +162,7 @@ EXCLUDED_SERVICES="infra-munin app-openvpn"
 - 書いてある項目だけ上書きします
 - 書いていない項目は、各 service repo の `.env.local` をそのまま使います
 - つまり「よく変える値だけを親側へ集約する」ためのファイルです
+- 永続データの保存先も、ここから一括指定できます
 
 初回は次の雛形から作れます。
 
@@ -175,6 +176,21 @@ cp stack.service.env.example stack.service.env.local
 INFRA_REVERSE_PROXY__DOMAIN=ponkotu.mydns.jp
 APP_WORDPRESS__APP_PORT=8080
 APP_TTRSS__TTRSS_SELF_URL_PATH=https://ttrss.ponkotu.mydns.jp/tt-rss/
+```
+
+永続データをまとめて別ディスクへ置きたい場合は、次のような一括指定も使えます。
+
+```bash
+GLOBAL__HOST_DATA_ROOT=/srv/docker-data
+GLOBAL__RECORDED_ROOT=/srv/docker-recorded
+```
+
+この場合、各サービスは既定のサブディレクトリ名で自動展開されます。サブディレクトリ名だけ変えたい場合は、たとえば次のように書けます。
+
+```bash
+APP_WORDPRESS__DATA_SUBDIR=blog
+APP_MIRAKURUN_EPGSTATION__DATA_SUBDIR=tv
+APP_MIRAKURUN_EPGSTATION__RECORDED_SUBDIR=tv-recorded
 ```
 
 優先順位は次の通りです。
