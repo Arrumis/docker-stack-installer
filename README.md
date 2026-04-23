@@ -16,10 +16,11 @@ cp stack.env.example stack.env.local
 ./scripts/smoke-test.sh
 ```
 
-そのあと、各 repo の `.env.local` を環境に合わせて調整し、起動します。
+そのあと、各 repo の `.env.local` を環境に合わせて調整し、まとめて起動します。
 
 ```bash
-./scripts/up-selected.sh
+./scripts/install-full-stack.sh
+./scripts/verify-stack.sh
 ```
 
 ひととおり自動で進めたい場合は、親 repo からまとめて実行できます。
@@ -147,6 +148,16 @@ SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpr
 ```bash
 ./scripts/up-selected.sh app-tategaki app-ttrss
 ```
+
+## 起動後確認
+
+主要サービスの入口をまとめて確認するには:
+
+```bash
+./scripts/verify-stack.sh
+```
+
+`infra-reverse-proxy` に既存証明書が残っているマシンでは HTTPS で検証し、証明書がまだない新規マシンでは HTTP で検証します。
 
 ## 切替前確認
 

@@ -55,19 +55,35 @@ cp stack.env.example stack.env.local
 - パスワード / webhook などの秘密情報
 - 録画系のデバイスパス
 
-## 6. 起動
+## 6. 一括起動
 
 ```bash
-./scripts/up-selected.sh
+./scripts/install-full-stack.sh
 ```
+
+録画環境を含む場合は、ここで `app-mirakurun-epgstation/scripts/prepare-host.sh` が自動実行され、`sudo apt-get install` と `pcscd` 停止が走ります。
 
 特定サービスだけ試すなら:
 
 ```bash
-./scripts/up-selected.sh app-wordpress app-ttrss
+./scripts/install-full-stack.sh --skip-bootstrap --skip-init-env --skip-doctor --skip-check app-wordpress app-ttrss
 ```
 
-## 7. live 環境を置き換える場合
+## 7. 起動後確認
+
+```bash
+./scripts/verify-stack.sh
+```
+
+確認できる内容:
+
+- `ponkotu.mydns.jp` / `ttrss.*` / `munin.*` の proxy 経由応答
+- Syncthing / OpenVPN / Tategaki / TxtMiru / FavAPI のローカル応答
+- Mirakurun API / EPGStation のローカル応答
+
+`infra-reverse-proxy/data/letsencrypt/renewal/*.conf` が残っているマシンでは HTTPS を再利用し、証明書がない新規マシンでは HTTP で確認します。
+
+## 8. live 環境を置き換える場合
 
 既存の本番機で port conflict を避けて切り替えるときは:
 
@@ -76,4 +92,3 @@ cp stack.env.example stack.env.local
 ./scripts/cutover-service.sh app-wordpress
 ./scripts/cutover-service.sh --apply app-wordpress
 ```
-
