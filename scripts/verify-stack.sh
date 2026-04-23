@@ -44,16 +44,12 @@ env_value() {
   service_dir="$(service_abs_dir "${service_name}")"
   env_file="$(service_env_file "${service_name}")"
 
+  apply_unified_overrides_for_service "${service_name}"
+
   if [[ -n "${env_file}" && -f "${service_dir}/${env_file}" ]]; then
     local value
     value="$(
-      awk -F '=' -v target="${key}" '
-        $0 !~ /^[[:space:]]*#/ && $1 == target {
-          sub(/^[^=]*=/, "", $0)
-          print $0
-          exit
-        }
-      ' "${service_dir}/${env_file}"
+      env_get_file "${service_dir}/${env_file}" "${key}" || true
     )"
     if [[ -n "${value}" ]]; then
       printf '%s\n' "${value}"

@@ -20,10 +20,5 @@ while IFS= read -r service_name; do
   fi
 
   echo "== starting ${service_name} =="
-  if [[ -n "${env_file}" && -f "${service_dir}/${env_file}" ]]; then
-    docker compose -f "${service_dir}/compose.yaml" --env-file "${service_dir}/${env_file}" up -d
-  else
-    docker compose -f "${service_dir}/compose.yaml" up -d
-  fi
+  run_new_compose "${service_name}" up -d
 done < <(list_target_services "$@")
-

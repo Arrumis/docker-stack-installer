@@ -95,49 +95,16 @@ random_secret() {
 
 BASIC_AUTH_PASSWORD="${BASIC_AUTH_PASSWORD:-$(random_secret)}"
 
-env_get() {
-  local file_path="$1"
-  local key="$2"
-
-  if [[ ! -f "${file_path}" ]]; then
-    return 1
-  fi
-
-  awk -F '=' -v target="${key}" '
-    $0 !~ /^[[:space:]]*#/ && $1 == target {
-      sub(/^[^=]*=/, "", $0)
-      print $0
-      exit
-    }
-  ' "${file_path}"
-}
-
-env_set() {
-  local file_path="$1"
-  local key="$2"
-  local value="$3"
-
-  if [[ ! -f "${file_path}" ]]; then
-    touch "${file_path}"
-  fi
-
-  if grep -qE "^${key}=" "${file_path}"; then
-    sed -i "s|^${key}=.*|${key}=${value}|" "${file_path}"
-  else
-    printf '%s=%s\n' "${key}" "${value}" >>"${file_path}"
-  fi
-}
-
 env_set_if_placeholder() {
   local file_path="$1"
   local key="$2"
   local fallback_value="$3"
   local current_value
 
-  current_value="$(env_get "${file_path}" "${key}" || true)"
+  current_value="$(env_get_file "${file_path}" "${key}" || true)"
   case "${current_value}" in
     ""|change-me|change-me-root|example.local|admin@example.local|http://localhost:8280/tt-rss/)
-      env_set "${file_path}" "${key}" "${fallback_value}"
+      env_set_file "${file_path}" "${key}" "${fallback_value}"
       ;;
   esac
 }
@@ -166,33 +133,33 @@ MUNIN_PROXY_UPSTREAM="${HOST_IP:-127.0.0.1}:8081"
 
 STACK_ENV_PATH="${STACK_ENV_FILE}"
 if [[ -n "${EXCLUDED_SERVICES_OVERRIDE}" ]]; then
-  env_set "${STACK_ENV_PATH}" "EXCLUDED_SERVICES" "\"${EXCLUDED_SERVICES_OVERRIDE}\""
+  env_set_file "${STACK_ENV_PATH}" "EXCLUDED_SERVICES" "\"${EXCLUDED_SERVICES_OVERRIDE}\""
 fi
 
 reverse_proxy_env="$(service_abs_dir "infra-reverse-proxy")/$(service_env_file "infra-reverse-proxy")"
-env_set "${reverse_proxy_env}" "DOMAIN" "${DOMAIN}"
-env_set "${reverse_proxy_env}" "ROOT_HOST" "${ROOT_HOST}"
-env_set "${reverse_proxy_env}" "TTRSS_HOST" "ttrss.${DOMAIN}"
-env_set "${reverse_proxy_env}" "MUNIN_HOST" "munin.${DOMAIN}"
-env_set "${reverse_proxy_env}" "TATEGAKI_HOST" "tategaki.${DOMAIN}"
-env_set "${reverse_proxy_env}" "SYNCTHING_HOST" "syncthing.${DOMAIN}"
-env_set "${reverse_proxy_env}" "OPENVPN_HOST" "openvpn.${DOMAIN}"
-env_set "${reverse_proxy_env}" "TRAEFIK_HOST" "traefik.${DOMAIN}"
-env_set "${reverse_proxy_env}" "EPGREC_HOST" "epgrec.${DOMAIN}"
-env_set "${reverse_proxy_env}" "EPGSTATION_HOST" "epgstation.${DOMAIN}"
-env_set "${reverse_proxy_env}" "MIRAKURUN_HOST" "mirakurun.${DOMAIN}"
-env_set "${reverse_proxy_env}" "WORDPRESS_UPSTREAM" "127.0.0.1:8080"
-env_set "${reverse_proxy_env}" "TTRSS_UPSTREAM" "127.0.0.1:8280"
-env_set "${reverse_proxy_env}" "MUNIN_UPSTREAM" "${MUNIN_PROXY_UPSTREAM}"
-env_set "${reverse_proxy_env}" "TATEGAKI_UPSTREAM" "127.0.0.1:3000"
-env_set "${reverse_proxy_env}" "SYNCTHING_UPSTREAM" "127.0.0.1:8384"
-env_set "${reverse_proxy_env}" "OPENVPN_ADMIN_UPSTREAM" "127.0.0.1:943"
-env_set "${reverse_proxy_env}" "OPENVPN_CLIENT_UPSTREAM" "127.0.0.1:9443"
-env_set "${reverse_proxy_env}" "MIRAKURUN_UPSTREAM" "127.0.0.1:40772"
-env_set "${reverse_proxy_env}" "EPGSTATION_UPSTREAM" "127.0.0.1:8888"
-env_set "${reverse_proxy_env}" "TLS_CERT_NAME" "${ROOT_HOST}"
-env_set "${reverse_proxy_env}" "LETSENCRYPT_EMAIL" "${LETSENCRYPT_EMAIL}"
-env_set "${reverse_proxy_env}" "BASIC_AUTH_USER" "${BASIC_AUTH_USER}"
+env_set_file "${reverse_proxy_env}" "DOMAIN" "${DOMAIN}"
+env_set_file "${reverse_proxy_env}" "ROOT_HOST" "${ROOT_HOST}"
+env_set_file "${reverse_proxy_env}" "TTRSS_HOST" "ttrss.${DOMAIN}"
+env_set_file "${reverse_proxy_env}" "MUNIN_HOST" "munin.${DOMAIN}"
+env_set_file "${reverse_proxy_env}" "TATEGAKI_HOST" "tategaki.${DOMAIN}"
+env_set_file "${reverse_proxy_env}" "SYNCTHING_HOST" "syncthing.${DOMAIN}"
+env_set_file "${reverse_proxy_env}" "OPENVPN_HOST" "openvpn.${DOMAIN}"
+env_set_file "${reverse_proxy_env}" "TRAEFIK_HOST" "traefik.${DOMAIN}"
+env_set_file "${reverse_proxy_env}" "EPGREC_HOST" "epgrec.${DOMAIN}"
+env_set_file "${reverse_proxy_env}" "EPGSTATION_HOST" "epgstation.${DOMAIN}"
+env_set_file "${reverse_proxy_env}" "MIRAKURUN_HOST" "mirakurun.${DOMAIN}"
+env_set_file "${reverse_proxy_env}" "WORDPRESS_UPSTREAM" "127.0.0.1:8080"
+env_set_file "${reverse_proxy_env}" "TTRSS_UPSTREAM" "127.0.0.1:8280"
+env_set_file "${reverse_proxy_env}" "MUNIN_UPSTREAM" "${MUNIN_PROXY_UPSTREAM}"
+env_set_file "${reverse_proxy_env}" "TATEGAKI_UPSTREAM" "127.0.0.1:3000"
+env_set_file "${reverse_proxy_env}" "SYNCTHING_UPSTREAM" "127.0.0.1:8384"
+env_set_file "${reverse_proxy_env}" "OPENVPN_ADMIN_UPSTREAM" "127.0.0.1:943"
+env_set_file "${reverse_proxy_env}" "OPENVPN_CLIENT_UPSTREAM" "127.0.0.1:9443"
+env_set_file "${reverse_proxy_env}" "MIRAKURUN_UPSTREAM" "127.0.0.1:40772"
+env_set_file "${reverse_proxy_env}" "EPGSTATION_UPSTREAM" "127.0.0.1:8888"
+env_set_file "${reverse_proxy_env}" "TLS_CERT_NAME" "${ROOT_HOST}"
+env_set_file "${reverse_proxy_env}" "LETSENCRYPT_EMAIL" "${LETSENCRYPT_EMAIL}"
+env_set_file "${reverse_proxy_env}" "BASIC_AUTH_USER" "${BASIC_AUTH_USER}"
 env_set_if_placeholder "${reverse_proxy_env}" "BASIC_AUTH_PASSWORD" "${BASIC_AUTH_PASSWORD}"
 
 wordpress_env="$(service_abs_dir "app-wordpress")/$(service_env_file "app-wordpress")"
@@ -201,23 +168,23 @@ env_set_if_placeholder "${wordpress_env}" "MYSQL_ROOT_PASSWORD" "$(random_secret
 
 ttrss_env="$(service_abs_dir "app-ttrss")/$(service_env_file "app-ttrss")"
 env_set_if_placeholder "${ttrss_env}" "TTRSS_DB_PASS" "$(random_secret)"
-env_set "${ttrss_env}" "TTRSS_SELF_URL_PATH" "${PUBLIC_SCHEME}://ttrss.${DOMAIN}/tt-rss/"
+env_set_file "${ttrss_env}" "TTRSS_SELF_URL_PATH" "${PUBLIC_SCHEME}://ttrss.${DOMAIN}/tt-rss/"
 
 munin_env="$(service_abs_dir "infra-munin")/$(service_env_file "infra-munin")"
-env_set "${munin_env}" "MUNIN_HTTP_PORT" "8081"
-env_set "${munin_env}" "MUNIN_NODE_NAME" "${HOST_SHORTNAME}"
-env_set "${munin_env}" "MUNIN_NODE_ADDRESS" "host.docker.internal"
-env_set "${munin_env}" "MUNIN_ALLOWED_CIDR" "172.16.0.0/12"
+env_set_file "${munin_env}" "MUNIN_HTTP_PORT" "8081"
+env_set_file "${munin_env}" "MUNIN_NODE_NAME" "${HOST_SHORTNAME}"
+env_set_file "${munin_env}" "MUNIN_NODE_ADDRESS" "host.docker.internal"
+env_set_file "${munin_env}" "MUNIN_ALLOWED_CIDR" "172.16.0.0/12"
 
 syncthing_env="$(service_abs_dir "app-syncthing")/$(service_env_file "app-syncthing")"
-env_set "${syncthing_env}" "HOSTNAME" "${HOST_SHORTNAME}"
+env_set_file "${syncthing_env}" "HOSTNAME" "${HOST_SHORTNAME}"
 
 openvpn_env="$(service_abs_dir "app-openvpn")/$(service_env_file "app-openvpn")"
 if [[ -n "${HOST_IFACE}" ]]; then
-  env_set "${openvpn_env}" "INTERFACE" "${HOST_IFACE}"
+  env_set_file "${openvpn_env}" "INTERFACE" "${HOST_IFACE}"
 fi
 if [[ -n "${OPENVPN_ADMIN_PASSWORD}" ]]; then
-  env_set "${openvpn_env}" "OPENVPN_ADMIN_PASSWORD" "${OPENVPN_ADMIN_PASSWORD}"
+  env_set_file "${openvpn_env}" "OPENVPN_ADMIN_PASSWORD" "${OPENVPN_ADMIN_PASSWORD}"
 else
   env_set_if_placeholder "${openvpn_env}" "OPENVPN_ADMIN_PASSWORD" "$(random_secret)"
 fi
@@ -225,6 +192,18 @@ fi
 epg_env="$(service_abs_dir "app-mirakurun-epgstation")/$(service_env_file "app-mirakurun-epgstation")"
 env_set_if_placeholder "${epg_env}" "EPG_DB_PASSWORD" "$(random_secret)"
 env_set_if_placeholder "${epg_env}" "EPG_DB_ROOT_PASSWORD" "$(random_secret)"
+
+for service_name in \
+  "infra-reverse-proxy" \
+  "app-wordpress" \
+  "app-ttrss" \
+  "infra-munin" \
+  "app-syncthing" \
+  "app-openvpn" \
+  "app-mirakurun-epgstation"
+do
+  apply_unified_overrides_for_service "${service_name}"
+done
 
 cat <<EOF
 Configured default env files for:

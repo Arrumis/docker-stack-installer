@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 STACK_ENV_FILE="${STACK_ENV_FILE:-${REPO_ROOT}/stack.env.local}"
+UNIFIED_ENV_FILE="${UNIFIED_ENV_FILE:-${REPO_ROOT}/stack.service.env.local}"
 SERVICES_FILE="${SERVICES_FILE:-${REPO_ROOT}/repos/services.tsv}"
 LEGACY_SERVICES_FILE="${LEGACY_SERVICES_FILE:-${REPO_ROOT}/repos/legacy-services.local.tsv}"
 
@@ -14,9 +15,80 @@ if [[ -f "${STACK_ENV_FILE}" ]]; then
   set +a
 fi
 
+if [[ -f "${UNIFIED_ENV_FILE}" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "${UNIFIED_ENV_FILE}"
+  set +a
+fi
+
 STACK_ROOT="${STACK_ROOT:-$(cd "${REPO_ROOT}/.." && pwd)}"
 STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-Arrumis}"
 CLONE_PROTOCOL="${CLONE_PROTOCOL:-https}"
+
+env_get_file() {
+  local file_path="$1"
+  local key="$2"
+
+  if [[ ! -f "${file_path}" ]]; then
+    return 1
+  fi
+
+  awk -F '=' -v target="${key}" '
+    $0 !~ /^[[:space:]]*#/ && $1 == target {
+      sub(/^[^=]*=/, "", $0)
+      print $0
+      exit
+    }
+  ' "${file_path}"
+}
+
+env_set_file() {
+  local file_path="$1"
+  local key="$2"
+  local value="$3"
+
+  if [[ ! -f "${file_path}" ]]; then
+    touch "${file_path}"
+  fi
+
+  if grep -qE "^${key}=" "${file_path}"; then
+    sed -i "s|^${key}=.*|${key}=${value}|" "${file_path}"
+  else
+    printf '%s=%s\n' "${key}" "${value}" >>"${file_path}"
+  fi
+}
+
+service_env_prefix() {
+  local service_name="$1"
+  printf '%s\n' "${service_name}" | tr '[:lower:]-' '[:upper:]_'
+}
+
+apply_unified_overrides_for_service() {
+  local service_name="$1"
+  local service_dir
+  local env_file
+  local prefix
+  local var_name
+  local key
+  local value
+
+  [[ -f "${UNIFIED_ENV_FILE}" ]] || return 0
+
+  service_dir="$(service_abs_dir "${service_name}")"
+  env_file="$(service_env_file "${service_name}")"
+
+  [[ -n "${env_file}" ]] || return 0
+  [[ -f "${service_dir}/${env_file}" ]] || return 0
+
+  prefix="$(service_env_prefix "${service_name}")__"
+
+  while IFS= read -r var_name; do
+    key="${var_name#${prefix}}"
+    value="${!var_name}"
+    env_set_file "${service_dir}/${env_file}" "${key}" "${value}"
+  done < <(compgen -A variable "${prefix}" || true)
+}
 
 load_services() {
   grep -v '^[[:space:]]*#' "${SERVICES_FILE}" | grep -v '^[[:space:]]*$'
@@ -115,6 +187,8 @@ service_compose_args() {
   local service_dir
   local env_file
   local compose_override
+
+  apply_unified_overrides_for_service "${service_name}"
 
   service_dir="$(service_abs_dir "${service_name}")"
   env_file="$(service_env_file "${service_name}")"

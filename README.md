@@ -102,11 +102,14 @@ cp stack.env.example stack.env.local
 - `stack.env.local`
   - 親 repo 用です
   - 「repo をどこへ clone するか」「どのサービスを対象にするか」のような全体設定を書きます
+- `stack.service.env.local`
+  - 親 repo 用です
+  - 各 service repo の `.env.local` に対して、親側から優先して上書きしたい値を書きます
 - 各 service repo の `.env.local`
   - 各 Docker サービス用です
   - ポート、公開ホスト名、データ保存先、DB パスワードなど、そのサービス固有の値を書きます
 
-先に `stack.env.local` を作り、その後 `init-env-files.sh` で各 service repo の `.env.local` を作る流れです。
+先に `stack.env.local` を作り、その後 `init-env-files.sh` で `stack.service.env.local` と各 service repo の `.env.local` を作る流れです。
 
 ### `stack.env.local`
 
@@ -151,6 +154,34 @@ EXCLUDED_SERVICES="infra-munin app-openvpn"
 
 - `BASIC_AUTH_USER`
 - `BASIC_AUTH_PASSWORD`
+
+### `stack.service.env.local`
+
+`stack.service.env.local` は、親 repo から各サービスの値をまとめて上書きするための統括 env です。
+
+- 書いてある項目だけ上書きします
+- 書いていない項目は、各 service repo の `.env.local` をそのまま使います
+- つまり「よく変える値だけを親側へ集約する」ためのファイルです
+
+初回は次の雛形から作れます。
+
+```bash
+cp stack.service.env.example stack.service.env.local
+```
+
+書式は `サービス名を大文字化して __ を付ける` 形です。
+
+```bash
+INFRA_REVERSE_PROXY__DOMAIN=ponkotu.mydns.jp
+APP_WORDPRESS__APP_PORT=8080
+APP_TTRSS__TTRSS_SELF_URL_PATH=https://ttrss.ponkotu.mydns.jp/tt-rss/
+```
+
+優先順位は次の通りです。
+
+1. `stack.service.env.local`
+2. 各 service repo の `.env.local`
+3. 各 service repo の `.env.example`
 
 ### 各 service repo の `.env.local`
 
