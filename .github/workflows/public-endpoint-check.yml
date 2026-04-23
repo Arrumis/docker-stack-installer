@@ -1,0 +1,38 @@
+name: Public Endpoint Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare stack env
+        run: |
+          cp stack.env.example stack.env.local
+          {
+            echo "STACK_ROOT=${GITHUB_WORKSPACE}"
+            echo "AUTO_ENABLE_HTTPS=1"
+          } >> stack.env.local
+
+      - name: Prepare proxy env
+        run: |
+          mkdir -p infra-reverse-proxy
+          cat > infra-reverse-proxy/.env.local <<'EOF'
+          DOMAIN=ponkotu.mydns.jp
+          ROOT_HOST=ponkotu.mydns.jp
+          TTRSS_HOST=ttrss.ponkotu.mydns.jp
+          MUNIN_HOST=munin.ponkotu.mydns.jp
+          TATEGAKI_HOST=tategaki.ponkotu.mydns.jp
+          SYNCTHING_HOST=syncthing.ponkotu.mydns.jp
+          OPENVPN_HOST=openvpn.ponkotu.mydns.jp
+          EPGSTATION_HOST=epgstation.ponkotu.mydns.jp
+          EOF
+
+      - name: Check public URLs
+        run: ./scripts/check-public-urls.sh
