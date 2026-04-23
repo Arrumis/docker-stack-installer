@@ -14,10 +14,6 @@ AUTO_ENABLE_HTTPS="${AUTO_ENABLE_HTTPS:-1}"
 INSTALLER_DIR="${INSTALLER_DIR:-${STACK_ROOT}/docker-stack-installer}"
 SKIP_INSTALL="${SKIP_INSTALL:-0}"
 SKIP_VERIFY="${SKIP_VERIFY:-0}"
-MYIP_SERVER="${MYIP_SERVER:-}"
-MYIP_ID="${MYIP_ID:-}"
-MYIP_PASSWORD="${MYIP_PASSWORD:-}"
-MYIP_FIXED_IP="${MYIP_FIXED_IP:-}"
 
 usage() {
   cat <<'EOF'
@@ -33,10 +29,6 @@ Options:
   --protocol <https|ssh>         Clone protocol for sibling repos
   --exclude-services <list>      Space-separated services excluded from default runs
   --openvpn-admin-password <pw>  OpenVPN admin password to store in .env.local
-  --myip-server <host-or-ip>     Optional Interlink myIP VPN server
-  --myip-id <miXXXXXX>           Optional Interlink myIP login ID
-  --myip-password <pw>           Optional Interlink myIP password
-  --myip-fixed-ip <ip>           Optional Interlink myIP fixed IP
   --skip-https                   Do not auto-upgrade the reverse proxy to HTTPS
   --skip-install                 Stop after repo/bootstrap/env preparation
   --skip-verify                  Skip final verify-stack.sh
@@ -80,22 +72,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --openvpn-admin-password)
       OPENVPN_ADMIN_PASSWORD="$2"
-      shift 2
-      ;;
-    --myip-server)
-      MYIP_SERVER="$2"
-      shift 2
-      ;;
-    --myip-id)
-      MYIP_ID="$2"
-      shift 2
-      ;;
-    --myip-password)
-      MYIP_PASSWORD="$2"
-      shift 2
-      ;;
-    --myip-fixed-ip)
-      MYIP_FIXED_IP="$2"
       shift 2
       ;;
     --skip-https)
@@ -195,14 +171,6 @@ if [[ "${SKIP_INSTALL}" -eq 0 ]]; then
   if [[ "${SKIP_VERIFY}" -eq 0 ]]; then
     run_with_docker_group "${repo_cmd_prefix} && ./scripts/verify-stack.sh"
   fi
-fi
-
-if [[ -n "${MYIP_SERVER}" && -n "${MYIP_ID}" && -n "${MYIP_PASSWORD}" && -n "${MYIP_FIXED_IP}" ]]; then
-  sudo bash "${INSTALLER_DIR}/scripts/install-myip-pptp.sh" \
-    --server "${MYIP_SERVER}" \
-    --id "${MYIP_ID}" \
-    --password "${MYIP_PASSWORD}" \
-    --fixed-ip "${MYIP_FIXED_IP}"
 fi
 
 cat <<EOF
