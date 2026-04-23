@@ -40,8 +40,32 @@ cp stack.env.example stack.env.local
 
 ```bash
 STACK_ROOT=/home/hiyori2023
+STACK_GITHUB_OWNER=Arrumis
+CLONE_PROTOCOL=https
 SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpress app-ttrss app-syncthing app-openvpn app-txtmiru-with-narourb app-mirakurun-epgstation"
 ```
+
+`CLONE_PROTOCOL` は `https` か `ssh` を使えます。
+
+## リポジトリ取得 / 更新
+
+新しい PC では、まず sibling repo をまとめて clone できます。
+
+```bash
+./scripts/bootstrap-repos.sh
+```
+
+既に clone 済みの repo がある場合は `git pull --ff-only` で更新します。
+
+## env ファイル初期化
+
+`.env.local` がない repo には、`.env.example` からひな型を作れます。
+
+```bash
+./scripts/init-env-files.sh
+```
+
+作成後に、各 repo の `.env.local` を環境に合わせて編集します。
 
 ## レイアウト確認
 
@@ -72,3 +96,4 @@ SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpr
 - 正本は各サービス repo
 - 親 repo は orchestration のみ
 - 実データや秘密情報は各 repo の `.env.local` と `data/` 側で管理
+- 新しい PC では `bootstrap-repos.sh` -> `init-env-files.sh` -> 各 `.env.local` 調整 -> `up-selected.sh` の流れで復元する

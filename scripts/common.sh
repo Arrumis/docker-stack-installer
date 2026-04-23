@@ -14,6 +14,8 @@ if [[ -f "${STACK_ENV_FILE}" ]]; then
 fi
 
 STACK_ROOT="${STACK_ROOT:-/home/hiyori2023}"
+STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-Arrumis}"
+CLONE_PROTOCOL="${CLONE_PROTOCOL:-https}"
 
 load_services() {
   grep -v '^[[:space:]]*#' "${SERVICES_FILE}" | grep -v '^[[:space:]]*$'
@@ -41,6 +43,25 @@ service_abs_dir() {
   printf '%s/%s\n' "${STACK_ROOT}" "${repo_dir}"
 }
 
+service_repo_url() {
+  local service_name="$1"
+  local repo_dir
+  repo_dir="$(service_repo_dir "${service_name}")"
+
+  case "${CLONE_PROTOCOL}" in
+    ssh)
+      printf 'git@github.com:%s/%s.git\n' "${STACK_GITHUB_OWNER}" "${repo_dir}"
+      ;;
+    https)
+      printf 'https://github.com/%s/%s.git\n' "${STACK_GITHUB_OWNER}" "${repo_dir}"
+      ;;
+    *)
+      echo "Unsupported CLONE_PROTOCOL: ${CLONE_PROTOCOL}" >&2
+      return 1
+      ;;
+  esac
+}
+
 list_target_services() {
   if [[ "$#" -gt 0 ]]; then
     printf '%s\n' "$@"
@@ -52,4 +73,3 @@ list_target_services() {
     load_services | awk -F '\t' '{ print $1 }'
   fi
 }
-
