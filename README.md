@@ -2,6 +2,26 @@
 
 複数の Docker サービス repo をまとめて確認・起動するための親 repo です。旧 `docker_container_installer_original` のようにテンプレートを大量コピーするのではなく、各 repo を正本として扱う前提に寄せています。
 
+## Quick Start
+
+最初にインストールする repo はこれです。新しい PC では、まずこの repo を clone してから他の repo を取得します。
+
+```bash
+git clone https://github.com/Arrumis/docker-stack-installer.git
+cd docker-stack-installer
+cp stack.env.example stack.env.local
+./scripts/bootstrap-repos.sh
+./scripts/init-env-files.sh
+./scripts/doctor.sh
+./scripts/smoke-test.sh
+```
+
+そのあと、各 repo の `.env.local` を環境に合わせて調整し、起動します。
+
+```bash
+./scripts/up-selected.sh
+```
+
 ## 役割
 
 - 各サービス repo の配置確認
