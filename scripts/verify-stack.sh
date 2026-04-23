@@ -16,6 +16,20 @@ if ! command -v ss >/dev/null 2>&1; then
 fi
 
 verify_status=0
+mapfile -t target_services < <(list_target_services "$@")
+
+service_requested() {
+  local target="$1"
+  local service_name
+
+  for service_name in "${target_services[@]}"; do
+    if [[ "${service_name}" == "${target}" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
 
 env_value() {
   local service_name="$1"
@@ -93,22 +107,54 @@ verify_reverse_proxy() {
   openvpn_host="$(env_value "infra-reverse-proxy" "OPENVPN_HOST" "openvpn.${domain}")"
   epgstation_host="$(env_value "infra-reverse-proxy" "EPGSTATION_HOST" "epgstation.${domain}")"
 
+  if ! service_requested "infra-reverse-proxy"; then
+    return 0
+  fi
+
   if https_active; then
-    check_curl "proxy wordpress https" proxy_check_https "${root_host}" /
-    check_curl "proxy ttrss https" proxy_check_https "${ttrss_host}" /tt-rss/
-    check_curl "proxy munin https" proxy_check_https "${munin_host}" /
-    check_curl "proxy tategaki https" proxy_check_https "${tategaki_host}" /
-    check_curl "proxy syncthing https" proxy_check_https "${syncthing_host}" /
-    check_curl "proxy openvpn https" proxy_check_https "${openvpn_host}" /
-    check_curl "proxy epgstation https" proxy_check_https "${epgstation_host}" /
+    if service_requested "app-wordpress"; then
+      check_curl "proxy wordpress https" proxy_check_https "${root_host}" /
+    fi
+    if service_requested "app-ttrss"; then
+      check_curl "proxy ttrss https" proxy_check_https "${ttrss_host}" /tt-rss/
+    fi
+    if service_requested "infra-munin"; then
+      check_curl "proxy munin https" proxy_check_https "${munin_host}" /
+    fi
+    if service_requested "app-tategaki"; then
+      check_curl "proxy tategaki https" proxy_check_https "${tategaki_host}" /
+    fi
+    if service_requested "app-syncthing"; then
+      check_curl "proxy syncthing https" proxy_check_https "${syncthing_host}" /
+    fi
+    if service_requested "app-openvpn"; then
+      check_curl "proxy openvpn https" proxy_check_https "${openvpn_host}" /
+    fi
+    if service_requested "app-mirakurun-epgstation"; then
+      check_curl "proxy epgstation https" proxy_check_https "${epgstation_host}" /
+    fi
   else
-    check_curl "proxy wordpress http" proxy_check_http "${root_host}" /
-    check_curl "proxy ttrss http" proxy_check_http "${ttrss_host}" /tt-rss/
-    check_curl "proxy munin http" proxy_check_http "${munin_host}" /
-    check_curl "proxy tategaki http" proxy_check_http "${tategaki_host}" /
-    check_curl "proxy syncthing http" proxy_check_http "${syncthing_host}" /
-    check_curl "proxy openvpn http" proxy_check_http "${openvpn_host}" /
-    check_curl "proxy epgstation http" proxy_check_http "${epgstation_host}" /
+    if service_requested "app-wordpress"; then
+      check_curl "proxy wordpress http" proxy_check_http "${root_host}" /
+    fi
+    if service_requested "app-ttrss"; then
+      check_curl "proxy ttrss http" proxy_check_http "${ttrss_host}" /tt-rss/
+    fi
+    if service_requested "infra-munin"; then
+      check_curl "proxy munin http" proxy_check_http "${munin_host}" /
+    fi
+    if service_requested "app-tategaki"; then
+      check_curl "proxy tategaki http" proxy_check_http "${tategaki_host}" /
+    fi
+    if service_requested "app-syncthing"; then
+      check_curl "proxy syncthing http" proxy_check_http "${syncthing_host}" /
+    fi
+    if service_requested "app-openvpn"; then
+      check_curl "proxy openvpn http" proxy_check_http "${openvpn_host}" /
+    fi
+    if service_requested "app-mirakurun-epgstation"; then
+      check_curl "proxy epgstation http" proxy_check_http "${epgstation_host}" /
+    fi
   fi
 }
 
@@ -120,21 +166,29 @@ verify_service_ports() {
   local mirakurun_port
   local epgstation_port
 
-  web_ui_port="$(env_value "app-syncthing" "WEB_UI_PORT" "8384")"
-  check_curl "syncthing web ui" curl -fsSI "http://127.0.0.1:${web_ui_port}/"
+  if service_requested "app-syncthing"; then
+    web_ui_port="$(env_value "app-syncthing" "WEB_UI_PORT" "8384")"
+    check_curl "syncthing web ui" curl -fsSI "http://127.0.0.1:${web_ui_port}/"
+  fi
 
-  admin_ui_port="$(env_value "app-openvpn" "ADMIN_UI_PORT" "943")"
-  openvpn_https_port="$(env_value "app-openvpn" "HTTPS_PORT" "9443")"
-  check_curl "openvpn admin" curl -kfsSI "https://127.0.0.1:${admin_ui_port}/admin"
-  check_curl "openvpn client" curl -kfsSI "https://127.0.0.1:${openvpn_https_port}/"
+  if service_requested "app-openvpn"; then
+    admin_ui_port="$(env_value "app-openvpn" "ADMIN_UI_PORT" "943")"
+    openvpn_https_port="$(env_value "app-openvpn" "HTTPS_PORT" "9443")"
+    check_curl "openvpn admin" curl -kfsSI "https://127.0.0.1:${admin_ui_port}/admin"
+    check_curl "openvpn client" curl -kfsSI "https://127.0.0.1:${openvpn_https_port}/"
+  fi
 
-  tategaki_port="$(env_value "app-tategaki" "APP_PORT" "3000")"
-  check_curl "tategaki" curl -fsSI "http://127.0.0.1:${tategaki_port}/"
+  if service_requested "app-tategaki"; then
+    tategaki_port="$(env_value "app-tategaki" "APP_PORT" "3000")"
+    check_curl "tategaki" curl -fsS "http://127.0.0.1:${tategaki_port}/"
+  fi
 
-  mirakurun_port="$(env_value "app-mirakurun-epgstation" "MIRAKURUN_PORT" "40772")"
-  epgstation_port="$(env_value "app-mirakurun-epgstation" "EPGSTATION_PORT" "8888")"
-  check_curl "mirakurun api" curl -fsS "http://127.0.0.1:${mirakurun_port}/api/version"
-  check_curl "epgstation" curl -fsSI "http://127.0.0.1:${epgstation_port}/"
+  if service_requested "app-mirakurun-epgstation"; then
+    mirakurun_port="$(env_value "app-mirakurun-epgstation" "MIRAKURUN_PORT" "40772")"
+    epgstation_port="$(env_value "app-mirakurun-epgstation" "EPGSTATION_PORT" "8888")"
+    check_curl "mirakurun api" curl -fsS "http://127.0.0.1:${mirakurun_port}/api/version"
+    check_curl "epgstation" curl -fsSI "http://127.0.0.1:${epgstation_port}/"
+  fi
 }
 
 verify_reverse_proxy

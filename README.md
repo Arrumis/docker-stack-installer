@@ -75,6 +75,14 @@ SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpr
 
 `CLONE_PROTOCOL` は `https` か `ssh` を使えます。
 
+使わないサービスを毎回引数で並べたくない場合は、`stack.env.local` に `EXCLUDED_SERVICES` を書くと、既定の対象一覧からまとめて外せます。
+
+```bash
+EXCLUDED_SERVICES="infra-munin app-openvpn"
+```
+
+この設定は `bootstrap-repos.sh` `init-env-files.sh` `check-layout.sh` `install-full-stack.sh` `up-selected.sh` `verify-stack.sh` の既定動作に反映されます。
+
 ## リポジトリ取得 / 更新
 
 新しい PC では、まず sibling repo をまとめて clone できます。
@@ -147,6 +155,8 @@ SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpr
 ```bash
 ./scripts/up-selected.sh app-tategaki app-ttrss
 ```
+
+既定一覧から一部だけ外して運用したい場合は、引数ではなく `stack.env.local` の `EXCLUDED_SERVICES` を使うのが楽です。
 
 ## 起動後確認
 

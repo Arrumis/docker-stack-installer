@@ -22,6 +22,52 @@ load_services() {
   grep -v '^[[:space:]]*#' "${SERVICES_FILE}" | grep -v '^[[:space:]]*$'
 }
 
+service_exists() {
+  local service_name="$1"
+  load_services | awk -F '\t' -v svc="${service_name}" '$1 == svc { found=1 } END { exit(found ? 0 : 1) }'
+}
+
+list_default_services() {
+  local service
+
+  if [[ -n "${SERVICES:-}" ]]; then
+    for service in ${SERVICES}; do
+      if service_exists "${service}"; then
+        printf '%s\n' "${service}"
+      else
+        echo "WARN ignoring unknown service in SERVICES: ${service}" >&2
+      fi
+    done
+  else
+    load_services | awk -F '\t' '{ print $1 }'
+  fi
+}
+
+is_excluded_service() {
+  local service_name="$1"
+  local excluded
+
+  for excluded in ${EXCLUDED_SERVICES:-}; do
+    if [[ "${excluded}" == "${service_name}" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+filter_excluded_services() {
+  local service_name
+
+  while IFS= read -r service_name; do
+    [[ -z "${service_name}" ]] && continue
+    if is_excluded_service "${service_name}"; then
+      continue
+    fi
+    printf '%s\n' "${service_name}"
+  done
+}
+
 resolve_service_row() {
   local service_name="$1"
   load_services | awk -F '\t' -v svc="${service_name}" '$1 == svc { print $0 }'
@@ -136,11 +182,7 @@ service_repo_url() {
 list_target_services() {
   if [[ "$#" -gt 0 ]]; then
     printf '%s\n' "$@"
-  elif [[ -n "${SERVICES:-}" ]]; then
-    for service in ${SERVICES}; do
-      printf '%s\n' "${service}"
-    done
   else
-    load_services | awk -F '\t' '{ print $1 }'
+    list_default_services | filter_excluded_services
   fi
 }
