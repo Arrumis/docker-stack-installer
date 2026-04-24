@@ -93,6 +93,8 @@ apply_unified_global_layout_for_service() {
   local pgid
   local basic_auth_user
   local basic_auth_password
+  local proxy_network_name
+  local proxy_log_dir
 
   [[ -f "${UNIFIED_ENV_FILE}" ]] || return 0
 
@@ -110,6 +112,8 @@ apply_unified_global_layout_for_service() {
   pgid="${GLOBAL__PGID:-}"
   basic_auth_user="${GLOBAL__BASIC_AUTH_USER:-}"
   basic_auth_password="${GLOBAL__BASIC_AUTH_PASSWORD:-}"
+  proxy_network_name="${GLOBAL__PROXY_NETWORK_NAME:-}"
+  proxy_log_dir="${GLOBAL__PROXY_LOG_DIR:-}"
 
   if [[ -z "${letsencrypt_email}" && -n "${domain}" ]]; then
     letsencrypt_email="admin@${domain}"
@@ -142,13 +146,25 @@ apply_unified_global_layout_for_service() {
       if [[ -n "${timezone}" ]]; then
         env_set_file "${service_dir}/${env_file}" "TZ" "${timezone}"
       fi
+      if [[ -n "${proxy_network_name}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "PROXY_NETWORK_NAME" "${proxy_network_name}"
+      fi
       ;;
     app-ttrss)
       if [[ -n "${domain}" ]]; then
         env_set_file "${service_dir}/${env_file}" "TTRSS_SELF_URL_PATH" "${public_scheme}://ttrss.${domain}/tt-rss/"
       fi
+      if [[ -n "${puid}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "OWNER_UID" "${puid}"
+      fi
+      if [[ -n "${pgid}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "OWNER_GID" "${pgid}"
+      fi
       if [[ -n "${timezone}" ]]; then
         env_set_file "${service_dir}/${env_file}" "TZ" "${timezone}"
+      fi
+      if [[ -n "${proxy_network_name}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "PROXY_NETWORK_NAME" "${proxy_network_name}"
       fi
       ;;
     app-syncthing|app-openvpn)
@@ -161,6 +177,9 @@ apply_unified_global_layout_for_service() {
       if [[ -n "${timezone}" ]]; then
         env_set_file "${service_dir}/${env_file}" "TZ" "${timezone}"
       fi
+      if [[ -n "${proxy_network_name}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "PROXY_NETWORK_NAME" "${proxy_network_name}"
+      fi
       ;;
     app-mirakurun-epgstation)
       if [[ -n "${puid}" ]]; then
@@ -172,10 +191,24 @@ apply_unified_global_layout_for_service() {
       if [[ -n "${timezone}" ]]; then
         env_set_file "${service_dir}/${env_file}" "TZ" "${timezone}"
       fi
+      if [[ -n "${proxy_network_name}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "PROXY_NETWORK_NAME" "${proxy_network_name}"
+      fi
       ;;
-    infra-fail2ban|infra-munin|app-tategaki|app-wordpress)
+    infra-fail2ban)
       if [[ -n "${timezone}" ]]; then
         env_set_file "${service_dir}/${env_file}" "TZ" "${timezone}"
+      fi
+      if [[ -n "${proxy_log_dir}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "PROXY_LOG_DIR" "${proxy_log_dir}"
+      fi
+      ;;
+    infra-munin|app-tategaki|app-wordpress)
+      if [[ -n "${timezone}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "TZ" "${timezone}"
+      fi
+      if [[ -n "${proxy_network_name}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "PROXY_NETWORK_NAME" "${proxy_network_name}"
       fi
       ;;
   esac

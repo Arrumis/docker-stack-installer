@@ -199,8 +199,10 @@ GLOBAL__BASIC_AUTH_PASSWORD=change-me
 GLOBAL__TZ=Asia/Tokyo
 GLOBAL__PUID=1000
 GLOBAL__PGID=1000
+GLOBAL__PROXY_NETWORK_NAME=proxy-network
 GLOBAL__HOST_DATA_ROOT=/srv/docker-data
 GLOBAL__RECORDED_ROOT=/srv/docker-recorded
+GLOBAL__PROXY_LOG_DIR=/srv/docker-stack/infra-reverse-proxy/data/log
 ```
 
 これだけで、主に次が自動反映されます。
@@ -210,7 +212,10 @@ GLOBAL__RECORDED_ROOT=/srv/docker-recorded
 - munin / mirakurun / epgrec / epgstation / traefik の Basic 認証
 - 各サービスの `TZ`
 - Syncthing / OpenVPN の `PUID` `PGID`
+- ttrss の `OWNER_UID` `OWNER_GID`
 - EPGStation の `EPGSTATION_UID` `EPGSTATION_GID`
+- 各サービスの `PROXY_NETWORK_NAME`
+- fail2ban の `PROXY_LOG_DIR`
 - 各サービスの永続データ保存先
 
 そのうえで、「ここだけ例外にしたい」ものだけを個別に足します。
@@ -226,6 +231,18 @@ APP_MIRAKURUN_EPGSTATION__RECORDED_SUBDIR=tv-recorded
 ```bash
 GLOBAL__HOST_DATA_ROOT=/srv/docker-data
 GLOBAL__RECORDED_ROOT=/srv/docker-recorded
+```
+
+proxy と fail2ban のログ位置をずらしたくない場合は、reverse proxy のログディレクトリも一箇所で管理できます。
+
+```bash
+GLOBAL__PROXY_LOG_DIR=/srv/docker-stack/infra-reverse-proxy/data/log
+```
+
+Docker network 名も一箇所で管理できます。proxy と各アプリは同じ network に入る必要があるため、通常はこの値を全サービスで揃えます。
+
+```bash
+GLOBAL__PROXY_NETWORK_NAME=proxy-network
 ```
 
 この場合、各サービスは既定のサブディレクトリ名で自動展開されます。サブディレクトリ名だけ変えたい場合は、たとえば次のように書けます。
