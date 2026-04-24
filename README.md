@@ -2,6 +2,10 @@
 
 複数の Docker サービス repo をまとめて確認・起動するための親 repo です。旧 `docker_container_installer_original` のようにテンプレートを大量コピーするのではなく、各 repo を正本として扱う前提に寄せています。公開入口は `infra-reverse-proxy` の `Traefik v2.11` を使います。
 
+## 日本語メモ
+
+GitHub のコミット一覧が英語で分かりにくい場合は、[コミット履歴の日本語メモ](docs/COMMIT_HISTORY_JA.md) を見てください。
+
 ## Quick Start
 
 最初にインストールする repo はこれです。新しい PC では、まずこの repo を clone してから他の repo を取得します。
