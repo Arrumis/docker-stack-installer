@@ -1,6 +1,7 @@
 .env
 .env.local
 stack.env.local
+stack.service.env.local
 repos/legacy-services.local.tsv
 .DS_Store
 logs/
