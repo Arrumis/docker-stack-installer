@@ -1,4 +1,4 @@
-name: Public Endpoint Check
+name: 公開URL確認
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -7,51 +7,51 @@ on:
   workflow_dispatch:
     inputs:
       root_host:
-        description: "Root host to check"
+        description: "WordPress を表示するメインホスト名"
         required: true
         default: "sample.com"
       ttrss_host:
-        description: "ttrss host to check"
+        description: "ttrss のホスト名"
         required: true
         default: "ttrss.sample.com"
       munin_host:
-        description: "munin host to check"
+        description: "Munin のホスト名"
         required: true
         default: "munin.sample.com"
       tategaki_host:
-        description: "tategaki host to check"
+        description: "tategaki のホスト名"
         required: true
         default: "tategaki.sample.com"
       syncthing_host:
-        description: "syncthing host to check"
+        description: "Syncthing のホスト名"
         required: true
         default: "syncthing.sample.com"
       openvpn_host:
-        description: "openvpn host to check"
+        description: "OpenVPN のホスト名"
         required: true
         default: "openvpn.sample.com"
       traefik_host:
-        description: "traefik host to check"
+        description: "Traefik 管理画面のホスト名"
         required: true
         default: "traefik.sample.com"
       mirakurun_host:
-        description: "mirakurun host to check"
+        description: "Mirakurun のホスト名"
         required: true
         default: "mirakurun.sample.com"
       epgrec_host:
-        description: "epgrec host to check"
+        description: "EPGStation 互換入口のホスト名"
         required: true
         default: "epgrec.sample.com"
       epgstation_host:
-        description: "epgstation host to check"
+        description: "EPGStation のホスト名"
         required: true
         default: "epgstation.sample.com"
       basic_auth_user:
-        description: "Optional basic auth user"
+        description: "Basic 認証ユーザー名。不要なら空欄"
         required: false
         default: ""
       basic_auth_password:
-        description: "Optional basic auth password"
+        description: "Basic 認証パスワード。不要なら空欄"
         required: false
         default: ""
 
@@ -59,10 +59,10 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: repo を取得
         uses: actions/checkout@v5
 
-      - name: Prepare stack env
+      - name: 親 env を準備
         run: |
           cp stack.env.example stack.env.local
           {
@@ -70,7 +70,7 @@ jobs:
             echo "AUTO_ENABLE_HTTPS=1"
           } >> stack.env.local
 
-      - name: Prepare proxy env
+      - name: proxy env を準備
         run: |
           mkdir -p infra-reverse-proxy
           cat > infra-reverse-proxy/.env.local <<'EOF'
@@ -89,5 +89,5 @@ jobs:
           BASIC_AUTH_PASSWORD=${{ inputs.basic_auth_password }}
           EOF
 
-      - name: Check public URLs
+      - name: 公開URLを確認
         run: bash ./scripts/check-public-urls.sh
