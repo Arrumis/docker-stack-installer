@@ -221,6 +221,27 @@ prompt_secret() {
   printf -v "${var_name}" '%s' "${answer}"
 }
 
+prompt_secret_confirm() {
+  local var_name="$1"
+  local label="$2"
+  local answer
+  local confirm
+
+  while true; do
+    read -r -s -p "${label}: " answer </dev/tty
+    printf '\n' >/dev/tty
+    read -r -s -p "${label}（確認のためもう一度）: " confirm </dev/tty
+    printf '\n' >/dev/tty
+
+    if [[ "${answer}" == "${confirm}" ]]; then
+      printf -v "${var_name}" '%s' "${answer}"
+      return 0
+    fi
+
+    echo "入力が一致しません。もう一度入力してください。" >/dev/tty
+  done
+}
+
 prompt_yes_no() {
   local var_name="$1"
   local label="$2"
@@ -327,11 +348,11 @@ EOF
   prompt_value BASIC_AUTH_USER "管理画面 Basic 認証ユーザー名" "${BASIC_AUTH_USER}"
   if [[ -z "${BASIC_AUTH_PASSWORD}" ]]; then
     clear_guided_screen "7. 管理画面 Basic 認証パスワード"
-    prompt_secret BASIC_AUTH_PASSWORD "管理画面 Basic 認証パスワード。空なら自動生成"
+    prompt_secret_confirm BASIC_AUTH_PASSWORD "管理画面 Basic 認証パスワード。空なら自動生成"
   fi
   if [[ -z "${OPENVPN_ADMIN_PASSWORD}" ]]; then
     clear_guided_screen "8. OpenVPN 管理者パスワード"
-    prompt_secret OPENVPN_ADMIN_PASSWORD "OpenVPN 管理者パスワード。空なら自動生成"
+    prompt_secret_confirm OPENVPN_ADMIN_PASSWORD "OpenVPN 管理者パスワード。空なら自動生成"
   fi
 fi
 
