@@ -201,6 +201,9 @@ apply_unified_global_layout_for_service() {
       fi
       ;;
     app-mirakurun-epgstation)
+      if [[ -n "${domain}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "MIRAKURUN_HOSTNAME" "mirakurun.${domain}"
+      fi
       if [[ -n "${puid}" ]]; then
         env_set_file "${service_dir}/${env_file}" "EPGSTATION_UID" "${puid}"
       fi
