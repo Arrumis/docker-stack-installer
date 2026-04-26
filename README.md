@@ -8,10 +8,17 @@ GitHub のコミット一覧が英語で分かりにくい場合は、[コミッ
 
 ## Quick Start
 
+完全クリーンな Ubuntu Desktop では、最初に `git` や `curl` が入っていないことがあります。まずこれを実行します。
+
+```bash
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl git
+```
+
 最初にインストールする repo はこれです。新しい PC では、まずこの repo を clone してから他の repo を取得します。
 
 ```bash
-git clone https://github.com/your-github-user/docker-stack-installer.git
+git clone https://github.com/Arrumis/docker-stack-installer.git
 cd docker-stack-installer
 cp stack.env.example stack.env.local
 ./scripts/bootstrap-repos.sh
@@ -20,11 +27,16 @@ cp stack.env.example stack.env.local
 ./scripts/smoke-test.sh
 ```
 
-Ubuntu 24.04 系のクリーンOSから、そのまま Docker 導入込みで始める場合は次でも入れられます。
+Ubuntu 24.04 / 26.04 系のクリーンOSから、そのまま Docker 導入込みで始める場合は次でも入れられます。
+
+完全クリーンOSでは `curl` が無い場合があるため、先に最小パッケージを入れてから実行します。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-github-user/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
-  --owner your-github-user \
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl git
+
+curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
+  --owner Arrumis \
   --domain sample.com
 ```
 
@@ -41,8 +53,8 @@ curl -fsSL https://raw.githubusercontent.com/your-github-user/docker-stack-insta
 必要なら追加オプションも使えます。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-github-user/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
-  --owner your-github-user \
+curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
+  --owner Arrumis \
   --domain sample.com \
   --email admin@sample.com \
   --exclude-services "infra-munin app-openvpn"
@@ -51,8 +63,8 @@ curl -fsSL https://raw.githubusercontent.com/your-github-user/docker-stack-insta
 HTTP のまま止めたい場合は、`--skip-https` を付けます。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-github-user/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
-  --owner your-github-user \
+curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
+  --owner Arrumis \
   --domain sample.com \
   --skip-https
 ```

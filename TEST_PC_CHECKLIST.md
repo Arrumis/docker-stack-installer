@@ -4,8 +4,15 @@
 
 ## 1. 親 repo を clone
 
+完全クリーンOSでは `git` や `curl` が無い場合があるため、最初に入れます。
+
 ```bash
-git clone https://github.com/your-github-user/docker-stack-installer.git
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl git
+```
+
+```bash
+git clone https://github.com/Arrumis/docker-stack-installer.git
 cd docker-stack-installer
 cp stack.env.example stack.env.local
 ```
