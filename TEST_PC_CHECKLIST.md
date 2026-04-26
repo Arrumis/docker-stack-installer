@@ -17,6 +17,12 @@ fork して別アカウントで管理する場合だけ置き換えます。
 
 途中で聞かれる内容に答えます。
 分からない項目は Enter で既定値を使えます。
+保存先には `~/docker-data` のような `~/` 付きパスも使えます。
+入力後は `/home/ユーザー名/...` の絶対パスへ変換されます。
+
+「インストールしないDocker」は、今回入れないサービス名を空白区切りで書く欄です。
+空のまま Enter なら全部入ります。
+例: `app-openvpn app-syncthing`
 
 通常の clone 先は `~/docker-stack/docker-stack-installer` です。
 
@@ -48,7 +54,7 @@ nano stack.env.local
 - `GLOBAL__HOST_DATA_ROOT` が永続データ保存先になっている
 - `GLOBAL__RECORDED_ROOT` が録画保存先になっている
 - `GLOBAL__BASIC_AUTH_USER` と `GLOBAL__BASIC_AUTH_PASSWORD` を設定している
-- 使わない Docker は `EXCLUDED_SERVICES` に書いている
+- 使わない Docker は `EXCLUDED_SERVICES` に書いている。空なら全部入る
 
 ## 3. 再実行する場合
 

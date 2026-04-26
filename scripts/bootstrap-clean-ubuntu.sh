@@ -38,7 +38,7 @@ usage() {
   --public-scheme <http|https>   公開URLの方式です
   --stack-root <path>            repo を clone する親ディレクトリです
   --protocol <https|ssh>         sibling repo の clone 方式です
-  --exclude-services <list>      入れないサービスを空白区切りで指定します
+  --exclude-services <list>      インストールしないDockerを空白区切りで指定します
   --openvpn-admin-password <pw>  OpenVPN 管理者パスワードです
   --basic-auth-user <user>       保護された管理画面の Basic 認証ユーザー名です
   --basic-auth-password <pw>     保護された管理画面の Basic 認証パスワードです
@@ -188,6 +188,22 @@ prompt_yes_no() {
   esac
 }
 
+expand_user_path() {
+  local value="$1"
+
+  case "${value}" in
+    "~")
+      printf '%s\n' "${HOME}"
+      ;;
+    "~/"*)
+      printf '%s/%s\n' "${HOME}" "${value#~/}"
+      ;;
+    *)
+      printf '%s\n' "${value}"
+      ;;
+  esac
+}
+
 if [[ "${GUIDED}" -eq 1 ]]; then
   if [[ ! -r /dev/tty ]]; then
     echo "--guided は対話入力できる端末で実行してください。" >&2
@@ -205,6 +221,8 @@ EOF
 
   ROOT_HOST="${ROOT_HOST:-${DOMAIN}}"
   LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-admin@${DOMAIN}}"
+  HOST_DATA_ROOT="${HOST_DATA_ROOT:-~/docker-data}"
+  RECORDED_ROOT="${RECORDED_ROOT:-~/recorded}"
   if [[ "${AUTO_ENABLE_HTTPS}" -eq 1 && "${PUBLIC_SCHEME}" == "http" ]]; then
     PUBLIC_SCHEME="https"
   fi
@@ -212,8 +230,21 @@ EOF
   prompt_value ROOT_HOST "WordPress を出すルートホスト名" "${ROOT_HOST}"
   prompt_value LETSENCRYPT_EMAIL "Let's Encrypt 通知メール" "${LETSENCRYPT_EMAIL}"
   prompt_value PUBLIC_SCHEME "公開URLの方式 http または https" "${PUBLIC_SCHEME}"
-  prompt_value HOST_DATA_ROOT "永続データの親ディレクトリ。空なら各repo既定値" "${HOST_DATA_ROOT}"
-  prompt_value RECORDED_ROOT "録画ファイルの親ディレクトリ。空なら録画repo既定値" "${RECORDED_ROOT}"
+  cat >/dev/tty <<'EOF'
+永続データの親ディレクトリ:
+  各DockerのDB、設定、アップロードファイルなどを保存する場所です。
+  例: ~/docker-data
+  `~/` は使えます。保存時は /home/... の絶対パスへ変換します。
+
+録画ファイルの親ディレクトリ:
+  EPGStation の録画ファイルを保存する場所です。
+  例: ~/recorded
+  録画系を使わない場合でも、そのまま Enter で問題ありません。
+EOF
+  prompt_value HOST_DATA_ROOT "永続データの親ディレクトリ" "${HOST_DATA_ROOT}"
+  prompt_value RECORDED_ROOT "録画ファイルの親ディレクトリ" "${RECORDED_ROOT}"
+  HOST_DATA_ROOT="$(expand_user_path "${HOST_DATA_ROOT}")"
+  RECORDED_ROOT="$(expand_user_path "${RECORDED_ROOT}")"
   prompt_value BASIC_AUTH_USER "管理画面 Basic 認証ユーザー名" "${BASIC_AUTH_USER}"
   if [[ -z "${BASIC_AUTH_PASSWORD}" ]]; then
     prompt_secret BASIC_AUTH_PASSWORD "管理画面 Basic 認証パスワード。空なら自動生成"
@@ -221,7 +252,18 @@ EOF
   if [[ -z "${OPENVPN_ADMIN_PASSWORD}" ]]; then
     prompt_secret OPENVPN_ADMIN_PASSWORD "OpenVPN 管理者パスワード。空なら自動生成"
   fi
-  prompt_value EXCLUDED_SERVICES "入れないサービス名。空白区切り、空なら全部対象" "${EXCLUDED_SERVICES}"
+  cat >/dev/tty <<'EOF'
+インストールしないDocker:
+  ここには「今回は入れないサービス名」を空白区切りで書きます。
+  空のまま Enter なら全部入れます。
+
+  指定できる例:
+    infra-munin app-openvpn app-syncthing app-mirakurun-epgstation
+
+  例:
+    app-openvpn app-syncthing
+EOF
+  prompt_value EXCLUDED_SERVICES "インストールしないDocker。空なら全部対象" "${EXCLUDED_SERVICES}"
 
   if [[ "${PREPARE_ONLY}" -eq 0 ]]; then
     install_now=1
@@ -319,10 +361,24 @@ env_set_file_local() {
 
 run_with_docker_group() {
   local command_string="$1"
+  local wrapper_dir
   if docker info >/dev/null 2>&1; then
     bash -lc "${command_string}"
-  else
+  elif command -v sg >/dev/null 2>&1; then
     sg docker -c "${command_string}"
+  else
+    wrapper_dir="$(mktemp -d)"
+    cat >"${wrapper_dir}/docker" <<'EOF'
+#!/usr/bin/env bash
+exec sudo docker "$@"
+EOF
+    chmod +x "${wrapper_dir}/docker"
+    set +e
+    PATH="${wrapper_dir}:${PATH}" bash -lc "${command_string}"
+    local command_status=$?
+    set -e
+    rm -rf "${wrapper_dir}"
+    return "${command_status}"
   fi
 }
 
