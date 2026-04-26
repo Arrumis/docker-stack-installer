@@ -40,6 +40,43 @@ curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main
   --domain sample.com
 ```
 
+`sample.com` は説明用の仮ドメインです。実際にインストールするときは、自分が使うドメインへ置き換えます。
+
+例:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
+  --owner Arrumis \
+  --domain ponkotu.mydns.jp
+```
+
+## サンプル値の置き換え
+
+README や `.env.example` には、GitHub に公開しても安全な仮の値が入っています。これらはそのまま使う値ではありません。
+
+| サンプル値 | 何に置き換えるか | 例 |
+|---|---|---|
+| `sample.com` | 実際に公開するドメイン | `ponkotu.mydns.jp` |
+| `admin@sample.com` | 証明書通知を受け取れるメール | `admin@ponkotu.mydns.jp` |
+| `your-github-user` | GitHub のユーザー名または owner 名 | `Arrumis` |
+| `change-me` | 自分で決めた強いパスワード | GitHub には書かない |
+| `/srv/docker-data` | 永続データを置く親ディレクトリ | `/mnt/data/docker-data` |
+| `/srv/docker-recorded` | 録画ファイルを置くディレクトリ | `/mnt/recorded` |
+
+まとめて変更したい値は、まず `stack.service.env.local` に書きます。
+
+```bash
+GLOBAL__DOMAIN=ponkotu.mydns.jp
+GLOBAL__ROOT_HOST=ponkotu.mydns.jp
+GLOBAL__LETSENCRYPT_EMAIL=admin@ponkotu.mydns.jp
+GLOBAL__HOST_DATA_ROOT=/mnt/data/docker-data
+GLOBAL__RECORDED_ROOT=/mnt/recorded
+GLOBAL__BASIC_AUTH_USER=admin
+GLOBAL__BASIC_AUTH_PASSWORD=自分で決めた強いパスワード
+```
+
+パスワードや個人環境の値は、必ず `.env.local` または `stack.service.env.local` にだけ書きます。`.env.example` は公開用の見本なので、実パスワードや個人情報は入れません。
+
 この bootstrap は次をまとめて行います。
 
 - `git` `docker.io` `docker-compose-v2` の導入
