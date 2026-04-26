@@ -2,88 +2,70 @@
 
 新しい PC で実行テストをするときの最短手順です。
 
-## 1. まず 1 本で導入する
+## 1. 対話式コマンド 1 本で始める
 
 完全クリーンOSでは `git` や `curl` が無い場合があります。
-次の 1 本は、最小パッケージの導入から bootstrap までまとめて行います。
+次の 1 本は、最小パッケージの導入、repo の取得、env ファイルの作成、必要値の質問、インストール、起動確認までまとめて行います。
 
 ```bash
-bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain ponkotu.mydns.jp'
+bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --guided'
 ```
 
-手動で確認しながら進めたい場合だけ、次の clone 手順を使います。
+途中で聞かれる内容に答えます。
+分からない項目は Enter で既定値を使えます。
+
+通常の clone 先は `~/docker-stack/docker-stack-installer` です。
 
 ```bash
-git clone https://github.com/Arrumis/docker-stack-installer.git
-cd docker-stack-installer
-cp stack.env.example stack.env.local
+cd ~/docker-stack/docker-stack-installer
 ```
 
-必要なら `stack.env.local` の `STACK_ROOT` をそのPC向けに調整します。
+## 2. 設定一覧を確認する
 
-## 2. 分離済み repo を取得
+インストールが終わると、設定控えが出力されます。
+パスワード類も含まれる場合があるため、GitHubへ上げないローカル専用の控えとして扱います。
 
 ```bash
-./scripts/bootstrap-repos.sh
-./scripts/init-env-files.sh
+less local-install-summary.md
 ```
 
-## 3. 事前診断
+あとから値を直したい場合は、まず `stack.service.env.local` を編集します。
+ドメイン、保存先、ID、パスワードなど、各 Docker に共通で使い回す値はここに書きます。
 
 ```bash
-./scripts/doctor.sh
+nano stack.service.env.local
+nano stack.env.local
 ```
 
 確認ポイント:
 
-- `docker` と `docker compose` が使える
-- 対象 repo が clone されている
-- `proxy-network` が必要なら存在する
-- `infra-reverse-proxy` は Traefik v2.11 前提で起動する
+- `GLOBAL__DOMAIN` が実際のドメインになっている
+- `GLOBAL__LETSENCRYPT_EMAIL` が自分のメールになっている
+- `GLOBAL__HOST_DATA_ROOT` が永続データ保存先になっている
+- `GLOBAL__RECORDED_ROOT` が録画保存先になっている
+- `GLOBAL__BASIC_AUTH_USER` と `GLOBAL__BASIC_AUTH_PASSWORD` を設定している
+- 使わない Docker は `EXCLUDED_SERVICES` に書いている
 
-## 4. スモークテスト
+## 3. 再実行する場合
 
-まずは構文確認だけ:
-
-```bash
-./scripts/smoke-test.sh
-```
-
-イメージ取得も含める場合:
+env 編集後に再実行する場合は、この 1 本でインストール、起動、起動後確認、設定一覧の再出力まで進めます。
 
 ```bash
-./scripts/smoke-test.sh --pull
-```
-
-## 5. `.env.local` の実値調整
-
-各 repo の `.env.local` に以下を反映します。
-
-- ドメイン
-- ポート
-- データ保存先
-- パスワード / webhook などの秘密情報
-- 録画系のデバイスパス
-
-## 6. 一括起動
-
-```bash
-./scripts/install-full-stack.sh
+./scripts/run-full-stack.sh
 ```
 
 録画環境を含む場合は、ここで `app-mirakurun-epgstation/scripts/prepare-host.sh` が自動実行され、`sudo apt-get install` と `pcscd` 停止が走ります。
 
-特定サービスだけ試すなら:
+特定サービスだけ試す場合は、実行コマンドへサービス名を渡します。
 
 ```bash
-./scripts/install-full-stack.sh --skip-bootstrap --skip-init-env --skip-doctor --skip-check app-wordpress app-ttrss
+./scripts/run-full-stack.sh app-wordpress app-ttrss
 ```
 
-## 7. 起動後確認
+## 4. 完了
 
-```bash
-./scripts/verify-stack.sh
-```
+`run-full-stack.sh` の最後に `verify-stack.sh` が走ります。
+これが通り、`local-install-summary.md` が出ていれば、新しい PC での導入確認は完了です。
 
 確認できる内容:
 
@@ -95,7 +77,27 @@ cp stack.env.example stack.env.local
 
 Traefik が `443` を持っていれば HTTPS を確認し、証明書がまだない新規マシンでは HTTP で確認します。
 
-## 8. live 環境を置き換える場合
+## 補助: 事前確認だけしたい場合
+
+構文確認だけ行いたい場合:
+
+```bash
+./scripts/smoke-test.sh
+```
+
+イメージ取得も含める場合:
+
+```bash
+./scripts/smoke-test.sh --pull
+```
+
+事前診断だけ再実行したい場合:
+
+```bash
+./scripts/doctor.sh
+```
+
+## 補助: live 環境を置き換える場合
 
 既存の本番機で port conflict を避けて切り替えるときは:
 

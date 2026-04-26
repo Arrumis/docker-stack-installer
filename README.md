@@ -8,54 +8,102 @@ GitHub のコミット一覧が英語で分かりにくい場合は、[コミッ
 
 ## Quick Start
 
-Ubuntu 24.04 / 26.04 系のクリーンOSから始める場合は、まずこの 1 本を実行します。
-`curl` や `git` がまだ入っていない状態でも、必要な最小パッケージを入れてから bootstrap へ進みます。
+このプロジェクトの基本方針は「迷わず入る」ことです。
+必要な実値はスクリプトの途中で聞かれるため、導入は次の 4 段階にします。
+
+1. 対話式コマンド 1 本で、必要なパッケージと repo を全部そろえる
+2. 質問に答える
+3. 実行コマンド 1 本で、起動と確認まで行う
+4. 完了
+
+### 1. 対話式コマンド
+
+Ubuntu 24.04 / 26.04 系のクリーンOSから始める場合も、まずこの 1 本です。
+`curl` や `git` がまだ無い状態でも、このコマンド内で最小パッケージを入れてから準備を続けます。
 
 ```bash
-bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain sample.com'
+bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --guided'
 ```
 
-`sample.com` は説明用の仮ドメインです。実際にインストールするときは、自分が使うドメインへ置き換えます。
-
-例:
-
-```bash
-bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain ponkotu.mydns.jp'
-```
-
-この bootstrap は次をまとめて行います。
+この対話式コマンドは次をまとめて行います。
 
 - `curl` の導入
 - `git` `docker.io` `docker-compose-v2` の導入
 - `docker-stack-installer` の clone / update
 - sibling repo の clone
-- `.env.local` の初期化
-- 指定した `--domain` 前提の基本値投入
-- `install-full-stack.sh` と `verify-stack.sh` の実行
-- 公開条件が揃っていれば `HTTP -> 証明書取得 -> HTTPS` の自動昇格
+- `stack.env.local` の作成
+- `stack.service.env.local` の作成
+- 各 repo の `.env.local` の作成
+- 必要な設定の質問
+- 入力内容の env 反映
+- インストール
+- 起動後確認
 
-必要なら追加オプションも同じ 1 本に足せます。
+### 2. 質問に答える
+
+途中で聞かれる主な内容は次です。
+
+- 公開ドメイン名
+- Let's Encrypt の通知メール
+- 永続データの保存先
+- 録画ファイルの保存先
+- Basic 認証のユーザー名とパスワード
+- OpenVPN 管理者パスワード
+- 入れないサービス
+
+分からない項目は Enter で既定値を使えます。
+入力した値は `stack.service.env.local` に残るため、あとから見直せます。
+
+最後に「このままインストールと起動確認まで進めますか」と聞かれます。
+ここで `Y` または Enter を押すと、そのまま最後まで進みます。
+ここで `n` を選ぶと、env を確認してから手動で実行できます。
+
+### 3. 実行コマンド
+
+対話式の最後で `n` を選んだ場合、または env を後から編集した場合は、この 1 本で起動と確認を行います。
 
 ```bash
-bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain sample.com --email admin@sample.com --exclude-services "infra-munin app-openvpn"'
+cd ~/docker-stack/docker-stack-installer
+./scripts/run-full-stack.sh
+```
+
+この中で `install-full-stack.sh` と `verify-stack.sh` を順番に実行します。
+
+### 4. 完了
+
+`verify-stack.sh` が通れば、Docker 群の起動確認まで完了です。
+証明書取得に必要な公開条件が揃っている場合は、`HTTP -> 証明書取得 -> HTTPS` の自動昇格も行われます。
+
+### env を手で確認してから進めたい場合
+
+途中入力ではなく、準備だけ行ってから自分で env を編集したい場合は `--prepare-only` を使います。
+
+```bash
+bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --prepare-only'
+```
+
+準備が終わったら、通常は `stack.service.env.local` を中心に編集します。
+
+```bash
+cd ~/docker-stack/docker-stack-installer
+nano stack.service.env.local
+nano stack.env.local
+./scripts/run-full-stack.sh
+```
+
+### 質問なしで一気に入れたい場合
+
+検証用PCなどで、ドメインやメールをコマンドに直接渡して一気に入れることもできます。
+`sample.com` は説明用の仮ドメインなので、実際に使うドメインへ置き換えます。
+
+```bash
+bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain sample.com --email admin@sample.com'
 ```
 
 HTTP のまま止めたい場合は、`--skip-https` を付けます。
 
 ```bash
 bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain sample.com --skip-https'
-```
-
-すでに `git` と Docker が入っていて、手動で確認しながら進めたい場合は、親 repo を clone してから実行できます。
-
-```bash
-git clone https://github.com/Arrumis/docker-stack-installer.git
-cd docker-stack-installer
-cp stack.env.example stack.env.local
-./scripts/bootstrap-repos.sh
-./scripts/init-env-files.sh
-./scripts/doctor.sh
-./scripts/smoke-test.sh
 ```
 
 ## サンプル値の置き換え
@@ -85,14 +133,25 @@ GLOBAL__BASIC_AUTH_PASSWORD=自分で決めた強いパスワード
 
 パスワードや個人環境の値は、必ず `.env.local` または `stack.service.env.local` にだけ書きます。`.env.example` は公開用の見本なので、実パスワードや個人情報は入れません。
 
-手動ルートで clone した場合や、bootstrap 後に設定を調整して再実行したい場合は、各 repo の `.env.local` を環境に合わせてから次を実行します。
+手動ルートで clone した場合や、bootstrap 後に設定を調整して再実行したい場合は、env を環境に合わせてから次を実行します。
 
 ```bash
-./scripts/install-full-stack.sh
-./scripts/verify-stack.sh
+./scripts/run-full-stack.sh
 ```
 
 `app-mirakurun-epgstation` を含める場合は、旧 `mirakurun.sh` から移したホスト準備スクリプトも実行されます。ここでは `sudo apt-get install` と `pcscd` 停止が入るため、録画環境だけはホスト側変更を伴います。
+
+## インストール後の設定一覧
+
+インストール後には、親 repo 直下に `local-install-summary.md` を出力します。
+これはそのPCで使った設定の控えです。
+
+```bash
+less local-install-summary.md
+```
+
+このファイルにはパスワードなどの秘密情報が含まれる場合があります。
+`.gitignore` に入っているため通常は GitHub へ上がりませんが、ローカル専用の控えとして扱ってください。
 
 ## 役割
 
@@ -123,9 +182,8 @@ GLOBAL__BASIC_AUTH_PASSWORD=自分で決めた強いパスワード
 
 ## 初期設定
 
-```bash
-cp stack.env.example stack.env.local
-```
+通常は Quick Start の対話式コマンドが、必要な env ファイルを自動で作ります。
+手動で repo を clone した場合だけ、`stack.env.example` から `stack.env.local` を作ってください。
 
 インストール時に触る設定ファイルは、まず次の 2 種類です。
 
@@ -368,10 +426,10 @@ APP_MIRAKURUN_EPGSTATION__RECORDED_SUBDIR=tv-recorded
 ./scripts/up-selected.sh
 ```
 
-検証で通した推奨順に、bootstrap / env 初期化 / doctor / layout check / 起動までまとめて流す場合:
+検証で通した推奨順に、bootstrap / env 初期化 / doctor / layout check / 起動 / 起動後確認 / 設定一覧出力までまとめて流す場合:
 
 ```bash
-./scripts/install-full-stack.sh
+./scripts/run-full-stack.sh
 ```
 
 すでに repo と `.env.local` が揃っている場合は、前段を飛ばして起動だけできます。
@@ -390,7 +448,7 @@ APP_MIRAKURUN_EPGSTATION__RECORDED_SUBDIR=tv-recorded
 
 ## 起動後確認
 
-主要サービスの入口をまとめて確認するには:
+主要サービスの入口だけ再確認するには:
 
 ```bash
 ./scripts/verify-stack.sh
@@ -463,5 +521,5 @@ rollback も同様です。
 - 正本は各サービス repo
 - 親 repo は orchestration のみ
 - 実データや秘密情報は各 repo の `.env.local` と `data/` 側で管理
-- 新しい PC では `bootstrap-repos.sh` -> `init-env-files.sh` -> 各 `.env.local` 調整 -> `up-selected.sh` の流れで復元する
+- 新しい PC では対話式コマンド 1 本 -> 質問に回答 -> `run-full-stack.sh` の流れで復元する
 - live 環境の切替は `preflight-cutover.sh` で衝突確認してから、`cutover-service.sh --apply <service>` をサービス単位で進める

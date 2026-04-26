@@ -3,5 +3,6 @@
 stack.env.local
 stack.service.env.local
 repos/legacy-services.local.tsv
+local-install-summary.md
 .DS_Store
 logs/
