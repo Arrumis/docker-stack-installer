@@ -8,14 +8,45 @@ GitHub のコミット一覧が英語で分かりにくい場合は、[コミッ
 
 ## Quick Start
 
-完全クリーンな Ubuntu Desktop では、最初に `git` や `curl` が入っていないことがあります。まずこれを実行します。
+Ubuntu 24.04 / 26.04 系のクリーンOSから始める場合は、まずこの 1 本を実行します。
+`curl` や `git` がまだ入っていない状態でも、必要な最小パッケージを入れてから bootstrap へ進みます。
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl git
+bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain sample.com'
 ```
 
-最初にインストールする repo はこれです。新しい PC では、まずこの repo を clone してから他の repo を取得します。
+`sample.com` は説明用の仮ドメインです。実際にインストールするときは、自分が使うドメインへ置き換えます。
+
+例:
+
+```bash
+bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain ponkotu.mydns.jp'
+```
+
+この bootstrap は次をまとめて行います。
+
+- `curl` の導入
+- `git` `docker.io` `docker-compose-v2` の導入
+- `docker-stack-installer` の clone / update
+- sibling repo の clone
+- `.env.local` の初期化
+- 指定した `--domain` 前提の基本値投入
+- `install-full-stack.sh` と `verify-stack.sh` の実行
+- 公開条件が揃っていれば `HTTP -> 証明書取得 -> HTTPS` の自動昇格
+
+必要なら追加オプションも同じ 1 本に足せます。
+
+```bash
+bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain sample.com --email admin@sample.com --exclude-services "infra-munin app-openvpn"'
+```
+
+HTTP のまま止めたい場合は、`--skip-https` を付けます。
+
+```bash
+bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain sample.com --skip-https'
+```
+
+すでに `git` と Docker が入っていて、手動で確認しながら進めたい場合は、親 repo を clone してから実行できます。
 
 ```bash
 git clone https://github.com/Arrumis/docker-stack-installer.git
@@ -25,29 +56,6 @@ cp stack.env.example stack.env.local
 ./scripts/init-env-files.sh
 ./scripts/doctor.sh
 ./scripts/smoke-test.sh
-```
-
-Ubuntu 24.04 / 26.04 系のクリーンOSから、そのまま Docker 導入込みで始める場合は次でも入れられます。
-
-完全クリーンOSでは `curl` が無い場合があるため、先に最小パッケージを入れてから実行します。
-
-```bash
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl git
-
-curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
-  --owner Arrumis \
-  --domain sample.com
-```
-
-`sample.com` は説明用の仮ドメインです。実際にインストールするときは、自分が使うドメインへ置き換えます。
-
-例:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
-  --owner Arrumis \
-  --domain ponkotu.mydns.jp
 ```
 
 ## サンプル値の置き換え
@@ -77,46 +85,11 @@ GLOBAL__BASIC_AUTH_PASSWORD=自分で決めた強いパスワード
 
 パスワードや個人環境の値は、必ず `.env.local` または `stack.service.env.local` にだけ書きます。`.env.example` は公開用の見本なので、実パスワードや個人情報は入れません。
 
-この bootstrap は次をまとめて行います。
-
-- `git` `docker.io` `docker-compose-v2` の導入
-- `docker-stack-installer` の clone / update
-- sibling repo の clone
-- `.env.local` の初期化
-- `sample.com` 前提の基本値投入
-- `install-full-stack.sh` と `verify-stack.sh` の実行
-- 公開条件が揃っていれば `HTTP -> 証明書取得 -> HTTPS` の自動昇格
-
-必要なら追加オプションも使えます。
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
-  --owner Arrumis \
-  --domain sample.com \
-  --email admin@sample.com \
-  --exclude-services "infra-munin app-openvpn"
-```
-
-HTTP のまま止めたい場合は、`--skip-https` を付けます。
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- \
-  --owner Arrumis \
-  --domain sample.com \
-  --skip-https
-```
-
-そのあと、各 repo の `.env.local` を環境に合わせて調整し、まとめて起動します。
+手動ルートで clone した場合や、bootstrap 後に設定を調整して再実行したい場合は、各 repo の `.env.local` を環境に合わせてから次を実行します。
 
 ```bash
 ./scripts/install-full-stack.sh
 ./scripts/verify-stack.sh
-```
-
-ひととおり自動で進めたい場合は、親 repo からまとめて実行できます。
-
-```bash
-./scripts/install-full-stack.sh
 ```
 
 `app-mirakurun-epgstation` を含める場合は、旧 `mirakurun.sh` から移したホスト準備スクリプトも実行されます。ここでは `sudo apt-get install` と `pcscd` 停止が入るため、録画環境だけはホスト側変更を伴います。

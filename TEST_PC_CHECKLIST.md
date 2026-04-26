@@ -2,14 +2,16 @@
 
 新しい PC で実行テストをするときの最短手順です。
 
-## 1. 親 repo を clone
+## 1. まず 1 本で導入する
 
-完全クリーンOSでは `git` や `curl` が無い場合があるため、最初に入れます。
+完全クリーンOSでは `git` や `curl` が無い場合があります。
+次の 1 本は、最小パッケージの導入から bootstrap までまとめて行います。
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl git
+bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain ponkotu.mydns.jp'
 ```
+
+手動で確認しながら進めたい場合だけ、次の clone 手順を使います。
 
 ```bash
 git clone https://github.com/Arrumis/docker-stack-installer.git
