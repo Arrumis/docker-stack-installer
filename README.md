@@ -176,15 +176,16 @@ less local-install-summary.md
 ## Munin のホスト側設定
 
 Munin の Web UI は `infra-munin` コンテナで起動します。
-ベースPC側の `munin-node` 監視を入れたい場合は、`infra-munin` repo に補助スクリプトがあります。
+ベースPC側の `munin-node` 監視も Docker 群の監視に必要なため、`infra-munin` をインストール対象にしている場合は一括インストール中に自動実行します。
 
 ```bash
 cd ~/docker-stack/infra-munin
 ./scripts/setup-host-munin-node.sh 127.0.0.1
 ```
 
-ただし、これはホストOSへ `munin-node` や Docker 監視プラグインを入れる処理です。
-通常の Docker 起動とは別物なので、現時点では一括インストールでは自動実行しません。
+この処理では、ホストOSへ `munin-node` と Docker 監視プラグインを入れます。
+手動で再実行したい場合だけ、上のコマンドを使います。
+Docker からの接続許可範囲は `infra-munin/.env.local` の `MUNIN_ALLOWED_CIDR` を使います。
 
 ## 役割
 

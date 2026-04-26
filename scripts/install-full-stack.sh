@@ -73,6 +73,31 @@ run_service_script_if_present() {
   fi
 }
 
+setup_munin_host_node() {
+  local service_name="infra-munin"
+  local service_dir
+  local env_file
+  local docker_cidr
+
+  service_dir="$(service_abs_dir "${service_name}")"
+  env_file="$(service_env_file "${service_name}")"
+
+  if [[ ! -x "${service_dir}/scripts/setup-host-munin-node.sh" ]]; then
+    return 0
+  fi
+
+  docker_cidr="$(
+    env_get_file "${service_dir}/${env_file}" "MUNIN_ALLOWED_CIDR" 2>/dev/null || true
+  )"
+  docker_cidr="${docker_cidr:-172.16.0.0/12}"
+
+  echo "== init infra-munin: scripts/setup-host-munin-node.sh =="
+  (
+    cd "${service_dir}"
+    ./scripts/setup-host-munin-node.sh 127.0.0.1 "${docker_cidr}"
+  )
+}
+
 preinstall_service() {
   local service_name="$1"
   case "${service_name}" in
@@ -85,6 +110,7 @@ preinstall_service() {
       ;;
     infra-munin)
       run_service_script_if_present "${service_name}" "scripts/init-layout.sh"
+      setup_munin_host_node
       ;;
     app-wordpress|app-ttrss|app-syncthing|app-openvpn|app-tategaki|app-mirakurun-epgstation)
       if [[ "${service_name}" == "app-mirakurun-epgstation" ]]; then
