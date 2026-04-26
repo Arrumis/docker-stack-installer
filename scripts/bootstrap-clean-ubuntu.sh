@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-STACK_ROOT="${STACK_ROOT:-${HOME}/docker-stack}"
+INSTALL_USER="${SUDO_USER:-${USER}}"
+USER_HOME="$(getent passwd "${INSTALL_USER}" | cut -d: -f6)"
+USER_HOME="${USER_HOME:-${HOME}}"
+STACK_ROOT="${STACK_ROOT:-${USER_HOME}/docker-stack}"
 STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-your-github-user}"
 CLONE_PROTOCOL="${CLONE_PROTOCOL:-https}"
 DOMAIN="${DOMAIN:-}"
@@ -20,6 +23,42 @@ SKIP_INSTALL="${SKIP_INSTALL:-0}"
 SKIP_VERIFY="${SKIP_VERIFY:-0}"
 PREPARE_ONLY="${PREPARE_ONLY:-0}"
 GUIDED="${GUIDED:-0}"
+TEMP_DIRS=()
+
+cleanup_bootstrap() {
+  local temp_dir
+
+  for temp_dir in "${TEMP_DIRS[@]:-}"; do
+    if [[ -n "${temp_dir}" && -d "${temp_dir}" ]]; then
+      rm -rf "${temp_dir}"
+    fi
+  done
+}
+
+on_bootstrap_exit() {
+  local status=$?
+
+  cleanup_bootstrap
+
+  if [[ "${status}" -ne 0 ]]; then
+    cat >&2 <<EOF
+
+インストールが途中で止まりました。
+一時ファイルは掃除しました。
+clone 済み repo と env は再実行に使えるため残しています。
+
+再実行する場合:
+  cd ${INSTALLER_DIR}
+  ./scripts/run-full-stack.sh
+EOF
+  fi
+
+  exit "${status}"
+}
+
+trap on_bootstrap_exit EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 usage() {
   cat <<'EOF'
@@ -153,6 +192,25 @@ prompt_value() {
   fi
 }
 
+clear_guided_screen() {
+  local title="$1"
+
+  [[ "${GUIDED}" -eq 1 ]] || return 0
+
+  if command -v clear >/dev/null 2>&1; then
+    clear >/dev/tty 2>/dev/null || true
+  else
+    printf '\033c' >/dev/tty
+  fi
+
+  cat >/dev/tty <<EOF
+docker-stack-installer 対話式セットアップ
+
+${title}
+
+EOF
+}
+
 prompt_secret() {
   local var_name="$1"
   local label="$2"
@@ -193,15 +251,30 @@ expand_user_path() {
 
   case "${value}" in
     "~")
-      printf '%s\n' "${HOME}"
+      printf '%s\n' "${USER_HOME}"
       ;;
     "~/"*)
-      printf '%s/%s\n' "${HOME}" "${value#~/}"
+      printf '%s/%s\n' "${USER_HOME}" "${value#~/}"
       ;;
     *)
       printf '%s\n' "${value}"
       ;;
   esac
+}
+
+print_available_services() {
+  local services_file="${INSTALLER_DIR}/repos/services.tsv"
+
+  if [[ ! -f "${services_file}" ]]; then
+    echo "  サービス一覧ファイルがまだありません。" >/dev/tty
+    return 0
+  fi
+
+  awk -F '\t' '
+    $0 !~ /^[[:space:]]*#/ && NF >= 2 {
+      printf "  - %-28s %s\n", $1, $2
+    }
+  ' "${services_file}" >/dev/tty
 }
 
 if [[ "${GUIDED}" -eq 1 ]]; then
@@ -216,6 +289,7 @@ if [[ "${GUIDED}" -eq 1 ]]; then
 EOF
 
   while [[ -z "${DOMAIN}" ]]; do
+    clear_guided_screen "1. 公開ドメイン名"
     prompt_value DOMAIN "公開ドメイン名" "${DOMAIN}"
   done
 
@@ -227,9 +301,13 @@ EOF
     PUBLIC_SCHEME="https"
   fi
 
+  clear_guided_screen "2. WordPress を出すルートホスト名"
   prompt_value ROOT_HOST "WordPress を出すルートホスト名" "${ROOT_HOST}"
+  clear_guided_screen "3. Let's Encrypt 通知メール"
   prompt_value LETSENCRYPT_EMAIL "Let's Encrypt 通知メール" "${LETSENCRYPT_EMAIL}"
+  clear_guided_screen "4. 公開URLの方式"
   prompt_value PUBLIC_SCHEME "公開URLの方式 http または https" "${PUBLIC_SCHEME}"
+  clear_guided_screen "5. 保存先ディレクトリ"
   cat >/dev/tty <<'EOF'
 永続データの親ディレクトリ:
   各DockerのDB、設定、アップロードファイルなどを保存する場所です。
@@ -245,34 +323,15 @@ EOF
   prompt_value RECORDED_ROOT "録画ファイルの親ディレクトリ" "${RECORDED_ROOT}"
   HOST_DATA_ROOT="$(expand_user_path "${HOST_DATA_ROOT}")"
   RECORDED_ROOT="$(expand_user_path "${RECORDED_ROOT}")"
+  clear_guided_screen "6. 管理画面 Basic 認証ユーザー名"
   prompt_value BASIC_AUTH_USER "管理画面 Basic 認証ユーザー名" "${BASIC_AUTH_USER}"
   if [[ -z "${BASIC_AUTH_PASSWORD}" ]]; then
+    clear_guided_screen "7. 管理画面 Basic 認証パスワード"
     prompt_secret BASIC_AUTH_PASSWORD "管理画面 Basic 認証パスワード。空なら自動生成"
   fi
   if [[ -z "${OPENVPN_ADMIN_PASSWORD}" ]]; then
+    clear_guided_screen "8. OpenVPN 管理者パスワード"
     prompt_secret OPENVPN_ADMIN_PASSWORD "OpenVPN 管理者パスワード。空なら自動生成"
-  fi
-  cat >/dev/tty <<'EOF'
-インストールしないDocker:
-  ここには「今回は入れないサービス名」を空白区切りで書きます。
-  空のまま Enter なら全部入れます。
-
-  指定できる例:
-    infra-munin app-openvpn app-syncthing app-mirakurun-epgstation
-
-  例:
-    app-openvpn app-syncthing
-EOF
-  prompt_value EXCLUDED_SERVICES "インストールしないDocker。空なら全部対象" "${EXCLUDED_SERVICES}"
-
-  if [[ "${PREPARE_ONLY}" -eq 0 ]]; then
-    install_now=1
-    prompt_yes_no install_now "このままインストールと起動確認まで進めますか" "y"
-    if [[ "${install_now}" -eq 0 ]]; then
-      SKIP_INSTALL=1
-    fi
-  else
-    SKIP_INSTALL=1
   fi
 fi
 
@@ -337,6 +396,35 @@ else
   git -C "${INSTALLER_DIR}" pull --ff-only
 fi
 
+if [[ "${GUIDED}" -eq 1 ]]; then
+  clear_guided_screen "9. インストールしないDocker"
+  cat >/dev/tty <<'EOF'
+ここには「今回は入れないサービス名」を空白区切りで書きます。
+空のまま Enter なら、下の一覧を全部インストールします。
+
+現在の管理対象:
+EOF
+  print_available_services
+  cat >/dev/tty <<'EOF'
+
+例:
+  app-openvpn app-syncthing
+
+EOF
+  prompt_value EXCLUDED_SERVICES "インストールしないDocker。空なら全部対象" "${EXCLUDED_SERVICES}"
+
+  if [[ "${PREPARE_ONLY}" -eq 0 ]]; then
+    clear_guided_screen "10. インストール開始確認"
+    install_now=1
+    prompt_yes_no install_now "このままインストールと起動確認まで進めますか" "y"
+    if [[ "${install_now}" -eq 0 ]]; then
+      SKIP_INSTALL=1
+    fi
+  else
+    SKIP_INSTALL=1
+  fi
+fi
+
 cat >"${INSTALLER_DIR}/stack.env.local" <<EOF
 STACK_ROOT=${STACK_ROOT}
 STACK_GITHUB_OWNER=${STACK_GITHUB_OWNER}
@@ -368,6 +456,7 @@ run_with_docker_group() {
     sg docker -c "${command_string}"
   else
     wrapper_dir="$(mktemp -d)"
+    TEMP_DIRS+=("${wrapper_dir}")
     cat >"${wrapper_dir}/docker" <<'EOF'
 #!/usr/bin/env bash
 exec sudo docker "$@"
@@ -378,6 +467,7 @@ EOF
     local command_status=$?
     set -e
     rm -rf "${wrapper_dir}"
+    TEMP_DIRS=("${TEMP_DIRS[@]/${wrapper_dir}/}")
     return "${command_status}"
   fi
 }

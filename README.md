@@ -63,6 +63,7 @@ bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates c
 
 「インストールしないDocker」は、今回入れないサービスを空白区切りで書く欄です。
 空のまま Enter なら全部入れます。
+対話式では、現在 `repos/services.tsv` に登録されている管理対象サービスを一覧表示します。
 
 例:
 
@@ -70,16 +71,12 @@ bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates c
 app-openvpn app-syncthing
 ```
 
-指定できる代表例:
-
-- `infra-munin`
-- `app-openvpn`
-- `app-syncthing`
-- `app-mirakurun-epgstation`
-
 最後に「このままインストールと起動確認まで進めますか」と聞かれます。
 ここで `Y` または Enter を押すと、そのまま最後まで進みます。
 ここで `n` を選ぶと、env を確認してから手動で実行できます。
+
+インストール中に失敗または中断した場合、一時ディレクトリは自動で掃除します。
+clone 済み repo と env は再実行に使えるため残します。
 
 ### 3. 実行コマンド
 
@@ -175,6 +172,19 @@ less local-install-summary.md
 
 このファイルにはパスワードなどの秘密情報が含まれる場合があります。
 `.gitignore` に入っているため通常は GitHub へ上がりませんが、ローカル専用の控えとして扱ってください。
+
+## Munin のホスト側設定
+
+Munin の Web UI は `infra-munin` コンテナで起動します。
+ベースPC側の `munin-node` 監視を入れたい場合は、`infra-munin` repo に補助スクリプトがあります。
+
+```bash
+cd ~/docker-stack/infra-munin
+./scripts/setup-host-munin-node.sh 127.0.0.1
+```
+
+ただし、これはホストOSへ `munin-node` や Docker 監視プラグインを入れる処理です。
+通常の Docker 起動とは別物なので、現時点では一括インストールでは自動実行しません。
 
 ## 役割
 

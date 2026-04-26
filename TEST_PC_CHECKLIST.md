@@ -22,6 +22,7 @@ fork して別アカウントで管理する場合だけ置き換えます。
 
 「インストールしないDocker」は、今回入れないサービス名を空白区切りで書く欄です。
 空のまま Enter なら全部入ります。
+対話式では、現在設定されている管理対象サービス一覧が表示されます。
 例: `app-openvpn app-syncthing`
 
 通常の clone 先は `~/docker-stack/docker-stack-installer` です。
