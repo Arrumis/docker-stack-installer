@@ -25,6 +25,10 @@ Ubuntu 24.04 / 26.04 系のクリーンOSから始める場合も、まずこの
 bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --guided'
 ```
 
+`--owner Arrumis` は、GitHub の `Arrumis/docker-stack-installer` と sibling repo 群を使うための指定です。
+この repo 群をそのまま使う場合は `Arrumis` のままで問題ありません。
+自分の GitHub アカウントへ fork して使う場合だけ、自分の GitHub owner 名へ置き換えます。
+
 この対話式コマンドは次をまとめて行います。
 
 - `curl` の導入

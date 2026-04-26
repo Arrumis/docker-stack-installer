@@ -11,6 +11,10 @@
 bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --guided'
 ```
 
+`--owner Arrumis` は、GitHub の `Arrumis` 配下にある repo 群を取得するという意味です。
+この repo 群をそのまま使うなら変更しません。
+fork して別アカウントで管理する場合だけ置き換えます。
+
 途中で聞かれる内容に答えます。
 分からない項目は Enter で既定値を使えます。
 
