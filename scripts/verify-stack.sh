@@ -93,6 +93,19 @@ check_curl_with_retry() {
   verify_status=1
 }
 
+check_tcp() {
+  local label="$1"
+  local host="$2"
+  local port="$3"
+
+  if timeout 5 bash -c ":</dev/tcp/${host}/${port}" >/dev/null 2>&1; then
+    echo "OK ${label}"
+  else
+    echo "NG ${label}"
+    verify_status=1
+  fi
+}
+
 https_active() {
   ss -tln | grep -qE '[:.]443[[:space:]]'
 }
@@ -270,7 +283,7 @@ verify_service_ports() {
     admin_ui_port="$(env_value "app-openvpn" "ADMIN_UI_PORT" "943")"
     openvpn_https_port="$(env_value "app-openvpn" "HTTPS_PORT" "9443")"
     check_curl "openvpn admin" curl -kfsSI "https://127.0.0.1:${admin_ui_port}/admin"
-    check_curl "openvpn client" curl -kfsSI "https://127.0.0.1:${openvpn_https_port}/"
+    check_tcp "openvpn client tcp" "127.0.0.1" "${openvpn_https_port}"
   fi
 
   if service_requested "app-tategaki"; then

@@ -26,6 +26,25 @@ STACK_ROOT="${STACK_ROOT:-$(cd "${REPO_ROOT}/.." && pwd)}"
 STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-your-github-user}"
 CLONE_PROTOCOL="${CLONE_PROTOCOL:-https}"
 
+normalize_stack_path() {
+  local path_value="$1"
+
+  case "${path_value}" in
+    "~")
+      printf '%s\n' "${HOME}"
+      ;;
+    "~/"*)
+      printf '%s/%s\n' "${HOME}" "${path_value#~/}"
+      ;;
+    */~/*)
+      printf '%s\n' "${path_value//\/~\//\/}"
+      ;;
+    *)
+      printf '%s\n' "${path_value}"
+      ;;
+  esac
+}
+
 env_get_file() {
   local file_path="$1"
   local key="$2"
@@ -229,8 +248,8 @@ apply_unified_data_layout_for_service() {
 
   [[ -f "${UNIFIED_ENV_FILE}" ]] || return 0
 
-  data_root="${GLOBAL__HOST_DATA_ROOT:-}"
-  recorded_root="${GLOBAL__RECORDED_ROOT:-}"
+  data_root="$(normalize_stack_path "${GLOBAL__HOST_DATA_ROOT:-}")"
+  recorded_root="$(normalize_stack_path "${GLOBAL__RECORDED_ROOT:-}")"
   [[ -n "${data_root}" || -n "${recorded_root}" ]] || return 0
 
   service_dir="$(service_abs_dir "${service_name}")"
