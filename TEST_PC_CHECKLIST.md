@@ -34,7 +34,8 @@ cd ~/docker-stack/docker-stack-installer
 ## 2. 設定一覧を確認する
 
 インストールが終わると、設定控えが出力されます。
-パスワード類も含まれる場合があるため、GitHubへ上げないローカル専用の控えとして扱います。
+パスワード忘れに備えるため、パスワード類も実値で記録されます。
+GitHubへ上げないローカル専用の復旧用控えとして扱います。
 
 ```bash
 less local-install-summary.md

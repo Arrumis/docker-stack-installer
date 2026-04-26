@@ -43,8 +43,9 @@ write_env_table() {
   printf '%s\n' "- 作成日時: \`$(date '+%Y-%m-%d %H:%M:%S %z')\`"
   printf '%s\n' "- 親 repo: \`${REPO_ROOT}\`"
   printf '%s\n\n' "- stack root: \`${STACK_ROOT}\`"
-  printf '注意: このファイルにはパスワードなどの秘密情報が含まれる場合があります。\n'
-  printf 'GitHubへ上げず、このPC内の控えとして扱ってください。\n\n'
+  printf '注意: パスワード忘れに備えるため、このファイルにはパスワードなどの秘密情報も実値で記録します。\n'
+  printf 'GitHubへ上げず、このPC内の復旧用控えとして扱ってください。\n'
+  printf 'ファイル権限は作成後に owner だけ読める `600` へ変更します。\n\n'
 } >"${OUTPUT_FILE}"
 
 write_env_table "親 repo の基本設定" "${STACK_ENV_FILE}"
@@ -81,3 +82,5 @@ cat <<EOF
 インストール設定一覧を出力しました。
   ${OUTPUT_FILE}
 EOF
+
+chmod 600 "${OUTPUT_FILE}"
