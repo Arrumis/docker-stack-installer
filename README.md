@@ -169,6 +169,7 @@ GLOBAL__BASIC_AUTH_PASSWORD=自分で決めた強いパスワード
 インストール後には、親 repo 直下に `local-install-summary.md` を出力します。
 これはそのPCで使った設定の控えです。
 パスワード忘れに備えるため、パスワードも実値で記録します。
+`app-ttrss` を入れた場合は、初回ログイン用の `admin` パスワードも `ttrss_admin_password.txt` から読み取り、この一覧に追記します。
 
 ```bash
 less local-install-summary.md
