@@ -412,7 +412,38 @@ service_env_file() {
 
 service_compose_override_file() {
   local service_name="$1"
-  resolve_service_row "${service_name}" | awk -F '\t' '{ print $4 }'
+  local override_file
+  local override_key
+  local service_dir
+  local detected_profile
+
+  override_key="$(service_env_prefix "${service_name}")__COMPOSE_OVERRIDE"
+  if [[ -n "${!override_key:-}" ]]; then
+    printf '%s\n' "${!override_key}"
+    return 0
+  fi
+
+  override_file="$(resolve_service_row "${service_name}" | awk -F '\t' '{ print $4 }')"
+
+  if [[ "${service_name}" == "app-mirakurun-epgstation" && "${override_file}" == "auto" ]]; then
+    service_dir="$(service_abs_dir "${service_name}")"
+    detected_profile="unknown"
+    if [[ -x "${service_dir}/scripts/detect-tuner-hardware.sh" ]]; then
+      detected_profile="$("${service_dir}/scripts/detect-tuner-hardware.sh" 2>/dev/null || printf 'unknown\n')"
+    fi
+
+    case "${detected_profile}" in
+      pxw3u4)
+        printf 'compose.hardware.pxw3u4.example.yaml\n'
+        ;;
+      dvb|pt3|unknown|*)
+        printf 'compose.hardware.example.yaml\n'
+        ;;
+    esac
+    return 0
+  fi
+
+  printf '%s\n' "${override_file}"
 }
 
 service_legacy_compose_file() {
