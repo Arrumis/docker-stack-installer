@@ -7,7 +7,10 @@ USER_HOME="${USER_HOME:-${HOME}}"
 STACK_ROOT="${STACK_ROOT:-${USER_HOME}/docker-stack}"
 STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-your-github-user}"
 CLONE_PROTOCOL="${CLONE_PROTOCOL:-https}"
-INSTALLER_BRANCH="${INSTALLER_BRANCH:-main}"
+# この改修ブランチを raw.githubusercontent.com から直接実行した場合でも、
+# clone される installer repo が main に戻らないよう、branch 既定値を合わせる。
+# main へ取り込むときは main に戻す。
+INSTALLER_BRANCH="${INSTALLER_BRANCH:-refactor/align-runtime-containers}"
 DOMAIN="${DOMAIN:-}"
 ROOT_HOST="${ROOT_HOST:-}"
 LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-}"
@@ -78,7 +81,7 @@ usage() {
   --public-scheme <http|https>   公開URLの方式です
   --stack-root <path>            repo を clone する親ディレクトリです
   --protocol <https|ssh>         sibling repo の clone 方式です
-  --branch <branch>              docker-stack-installer の branch です。省略時は main です
+  --branch <branch>              docker-stack-installer の branch です。通常は指定不要です
   --exclude-services <list>      インストールしないDockerを空白区切りで指定します
   --openvpn-admin-password <pw>  OpenVPN 管理者パスワードです
   --basic-auth-user <user>       保護された管理画面の Basic 認証ユーザー名です
