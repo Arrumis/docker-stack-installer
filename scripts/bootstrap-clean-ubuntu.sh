@@ -7,6 +7,7 @@ USER_HOME="${USER_HOME:-${HOME}}"
 STACK_ROOT="${STACK_ROOT:-${USER_HOME}/docker-stack}"
 STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-your-github-user}"
 CLONE_PROTOCOL="${CLONE_PROTOCOL:-https}"
+INSTALLER_BRANCH="${INSTALLER_BRANCH:-main}"
 DOMAIN="${DOMAIN:-}"
 ROOT_HOST="${ROOT_HOST:-}"
 LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-}"
@@ -77,6 +78,7 @@ usage() {
   --public-scheme <http|https>   公開URLの方式です
   --stack-root <path>            repo を clone する親ディレクトリです
   --protocol <https|ssh>         sibling repo の clone 方式です
+  --branch <branch>              docker-stack-installer の branch です。省略時は main です
   --exclude-services <list>      インストールしないDockerを空白区切りで指定します
   --openvpn-admin-password <pw>  OpenVPN 管理者パスワードです
   --basic-auth-user <user>       保護された管理画面の Basic 認証ユーザー名です
@@ -118,6 +120,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --protocol)
       CLONE_PROTOCOL="$2"
+      shift 2
+      ;;
+    --branch)
+      INSTALLER_BRANCH="$2"
       shift 2
       ;;
     --exclude-services)
@@ -404,10 +410,10 @@ mkdir -p "${STACK_ROOT}"
 if [[ ! -d "${INSTALLER_DIR}/.git" ]]; then
   case "${CLONE_PROTOCOL}" in
     ssh)
-      git clone "git@github.com:${STACK_GITHUB_OWNER}/docker-stack-installer.git" "${INSTALLER_DIR}"
+      git clone --branch "${INSTALLER_BRANCH}" --single-branch "git@github.com:${STACK_GITHUB_OWNER}/docker-stack-installer.git" "${INSTALLER_DIR}"
       ;;
     https)
-      git clone "https://github.com/${STACK_GITHUB_OWNER}/docker-stack-installer.git" "${INSTALLER_DIR}"
+      git clone --branch "${INSTALLER_BRANCH}" --single-branch "https://github.com/${STACK_GITHUB_OWNER}/docker-stack-installer.git" "${INSTALLER_DIR}"
       ;;
     *)
       echo "未対応の clone 方式です: ${CLONE_PROTOCOL}" >&2
@@ -415,7 +421,9 @@ if [[ ! -d "${INSTALLER_DIR}/.git" ]]; then
       ;;
   esac
 else
-  git -C "${INSTALLER_DIR}" pull --ff-only
+  git -C "${INSTALLER_DIR}" fetch origin "${INSTALLER_BRANCH}"
+  git -C "${INSTALLER_DIR}" checkout "${INSTALLER_BRANCH}"
+  git -C "${INSTALLER_DIR}" pull --ff-only origin "${INSTALLER_BRANCH}"
 fi
 
 if [[ "${GUIDED}" -eq 1 ]]; then
@@ -451,6 +459,7 @@ cat >"${INSTALLER_DIR}/stack.env.local" <<EOF
 STACK_ROOT=${STACK_ROOT}
 STACK_GITHUB_OWNER=${STACK_GITHUB_OWNER}
 CLONE_PROTOCOL=${CLONE_PROTOCOL}
+INSTALLER_BRANCH=${INSTALLER_BRANCH}
 EXCLUDED_SERVICES="${EXCLUDED_SERVICES}"
 AUTO_ENABLE_HTTPS=${AUTO_ENABLE_HTTPS}
 EOF
