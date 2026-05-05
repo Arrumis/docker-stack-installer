@@ -86,16 +86,38 @@ service_env_prefix() {
 service_default_data_subdir() {
   local service_name="$1"
   case "${service_name}" in
-    app-wordpress) printf 'wordpress\n' ;;
+    app-wordpress) printf 'wp\n' ;;
     app-ttrss) printf 'ttrss\n' ;;
     app-tategaki) printf 'tategaki\n' ;;
-    app-syncthing) printf 'syncthing\n' ;;
+    app-syncthing) printf 'sync\n' ;;
     app-openvpn) printf 'openvpn\n' ;;
-    app-mirakurun-epgstation) printf 'mirakurun-epgstation\n' ;;
+    app-mirakurun-epgstation) printf '.\n' ;;
     infra-reverse-proxy) printf 'reverse-proxy\n' ;;
     infra-fail2ban) printf 'fail2ban\n' ;;
     infra-munin) printf 'munin\n' ;;
     *) printf '%s\n' "${service_name}" ;;
+  esac
+}
+
+join_data_root() {
+  local root="$1"
+  local subdir="$2"
+
+  case "${subdir}" in
+    ""|".")
+      if [[ "${root}" == "/" ]]; then
+        printf '/\n'
+      else
+        printf '%s\n' "${root%/}"
+      fi
+      ;;
+    *)
+      if [[ "${root}" == "/" ]]; then
+        printf '/%s\n' "${subdir#/}"
+      else
+        printf '%s/%s\n' "${root%/}" "${subdir#/}"
+      fi
+      ;;
   esac
 }
 
@@ -267,17 +289,17 @@ apply_unified_data_layout_for_service() {
   recorded_subdir="${!recorded_subdir_var:-${data_subdir}}"
 
   if [[ -n "${data_root}" ]]; then
-    service_root="${data_root%/}/${data_subdir}"
+    service_root="$(join_data_root "${data_root}" "${data_subdir}")"
     case "${service_name}" in
       app-wordpress)
         env_set_file "${service_dir}/${env_file}" "HOST_DATA_DIR" "${service_root}"
         env_set_file "${service_dir}/${env_file}" "WORDPRESS_HTML_DIR" "${service_root}/html"
-        env_set_file "${service_dir}/${env_file}" "WORDPRESS_DB_DIR" "${service_root}/db"
+        env_set_file "${service_dir}/${env_file}" "WORDPRESS_DB_DIR" "${service_root}/db_data"
         ;;
       app-ttrss)
         env_set_file "${service_dir}/${env_file}" "HOST_DATA_DIR" "${service_root}"
-        env_set_file "${service_dir}/${env_file}" "TTRSS_DB_DIR" "${service_root}/db"
-        env_set_file "${service_dir}/${env_file}" "TTRSS_APP_DIR" "${service_root}/app"
+        env_set_file "${service_dir}/${env_file}" "TTRSS_DB_DIR" "${service_root}/ttrss_db"
+        env_set_file "${service_dir}/${env_file}" "TTRSS_APP_DIR" "${service_root}/ttrss_app"
         env_set_file "${service_dir}/${env_file}" "TTRSS_CONFIG_DIR" "${service_root}/config.d"
         ;;
       app-tategaki)
@@ -287,17 +309,17 @@ apply_unified_data_layout_for_service() {
       app-syncthing)
         env_set_file "${service_dir}/${env_file}" "HOST_DATA_DIR" "${service_root}"
         env_set_file "${service_dir}/${env_file}" "SYNCTHING_CONFIG_DIR" "${service_root}/config"
-        env_set_file "${service_dir}/${env_file}" "SYNCTHING_STORAGE_DIR" "${service_root}/storage"
+        env_set_file "${service_dir}/${env_file}" "SYNCTHING_STORAGE_DIR" "${service_root}/data"
         ;;
       app-openvpn)
         env_set_file "${service_dir}/${env_file}" "HOST_DATA_DIR" "${service_root}"
-        env_set_file "${service_dir}/${env_file}" "OPENVPN_CONFIG_DIR" "${service_root}/config"
+        env_set_file "${service_dir}/${env_file}" "OPENVPN_CONFIG_DIR" "${service_root}"
         ;;
       app-mirakurun-epgstation)
         env_set_file "${service_dir}/${env_file}" "HOST_DATA_DIR" "${service_root}"
         env_set_file "${service_dir}/${env_file}" "MIRAKURUN_CONFIG_DIR" "${service_root}/mirakurun/conf"
         env_set_file "${service_dir}/${env_file}" "MIRAKURUN_DATA_DIR" "${service_root}/mirakurun/data"
-        env_set_file "${service_dir}/${env_file}" "EPG_DB_DIR" "${service_root}/mariadb"
+        env_set_file "${service_dir}/${env_file}" "EPG_DB_DIR" "${service_root}/mirakurun/mira_sql"
         env_set_file "${service_dir}/${env_file}" "EPGSTATION_CONFIG_DIR" "${service_root}/epgstation/config"
         env_set_file "${service_dir}/${env_file}" "EPGSTATION_DATA_DIR" "${service_root}/epgstation/data"
         env_set_file "${service_dir}/${env_file}" "EPGSTATION_THUMBNAIL_DIR" "${service_root}/epgstation/thumbnail"
@@ -307,7 +329,7 @@ apply_unified_data_layout_for_service() {
   fi
 
   if [[ -n "${recorded_root}" && "${service_name}" == "app-mirakurun-epgstation" ]]; then
-    env_set_file "${service_dir}/${env_file}" "RECORDED_DIR" "${recorded_root%/}/${recorded_subdir}"
+    env_set_file "${service_dir}/${env_file}" "RECORDED_DIR" "$(join_data_root "${recorded_root}" "${recorded_subdir}")"
   fi
 }
 
