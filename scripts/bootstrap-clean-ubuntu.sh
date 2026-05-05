@@ -390,8 +390,12 @@ fi
 sudo -v
 
 export DEBIAN_FRONTEND=noninteractive
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl git docker.io docker-compose-v2
+# sudo は環境変数を落とすことがあるため、apt/dpkg へ明示的に渡す。
+# docker.io の postinst は daemon restart 確認を出すことがあるので、
+# clean install の bootstrap では非対話で restart 可として進める。
+echo 'docker.io docker.io/restart boolean true' | sudo debconf-set-selections
+sudo env DEBIAN_FRONTEND=noninteractive apt-get update
+sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl git docker.io docker-compose-v2
 sudo systemctl enable --now docker
 sudo usermod -aG docker "${USER}"
 
