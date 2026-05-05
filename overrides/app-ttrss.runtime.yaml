@@ -1,0 +1,16 @@
+# 旧稼働コンテナへ寄せるための親 repo 管理 override です。
+# 既存 PostgreSQL データは PGDATA=/var/lib/postgresql/data で作られているため、
+# /pgdata サブディレクトリへ変えると空DB扱いになり、旧アカウントが見えなくなります。
+services:
+  db:
+    environment:
+      PGDATA: /var/lib/postgresql/data
+
+  app:
+    image: cthulhoo/ttrss-fpm-pgsql-static:latest
+
+  updater:
+    image: cthulhoo/ttrss-fpm-pgsql-static:latest
+
+  web-nginx:
+    image: cthulhoo/ttrss-web-nginx:latest

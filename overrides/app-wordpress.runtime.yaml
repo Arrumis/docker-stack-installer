@@ -1,0 +1,14 @@
+# 旧稼働コンテナへ寄せるための親 repo 管理 override です。
+# DB 名・ユーザー・パスワードは configure-default-envs.sh 側で旧値を入れます。
+services:
+  wordpress:
+    image: wordpress
+    environment:
+      WORDPRESS_DB_HOST: mysql:3306
+
+  db:
+    image: mariadb
+    networks:
+      default:
+        aliases:
+          - mysql

@@ -109,6 +109,22 @@ env_set_if_placeholder() {
   esac
 }
 
+env_set_if_placeholder_or_default() {
+  local file_path="$1"
+  local key="$2"
+  local fallback_value="$3"
+  local default_value="$4"
+  local current_value
+
+  current_value="$(env_get_file "${file_path}" "${key}" || true)"
+  if [[ "${current_value}" == "${default_value}" ]]; then
+    env_set_file "${file_path}" "${key}" "${fallback_value}"
+    return 0
+  fi
+
+  env_set_if_placeholder "${file_path}" "${key}" "${fallback_value}"
+}
+
 primary_interface() {
   ip route show default 2>/dev/null | awk '/default/ { print $5; exit }'
 }
@@ -163,11 +179,13 @@ env_set_file "${reverse_proxy_env}" "BASIC_AUTH_USER" "${BASIC_AUTH_USER}"
 env_set_if_placeholder "${reverse_proxy_env}" "BASIC_AUTH_PASSWORD" "${BASIC_AUTH_PASSWORD}"
 
 wordpress_env="$(service_abs_dir "app-wordpress")/$(service_env_file "app-wordpress")"
-env_set_if_placeholder "${wordpress_env}" "WORDPRESS_DB_PASSWORD" "$(random_secret)"
-env_set_if_placeholder "${wordpress_env}" "MYSQL_ROOT_PASSWORD" "$(random_secret)"
+env_set_if_placeholder_or_default "${wordpress_env}" "WORDPRESS_DB_NAME" "wp-db" "wordpress"
+env_set_if_placeholder_or_default "${wordpress_env}" "WORDPRESS_DB_USER" "wp-db-user" "wordpress"
+env_set_if_placeholder "${wordpress_env}" "WORDPRESS_DB_PASSWORD" "wp-db-pw"
+env_set_if_placeholder "${wordpress_env}" "MYSQL_ROOT_PASSWORD" "mysql-root-pw"
 
 ttrss_env="$(service_abs_dir "app-ttrss")/$(service_env_file "app-ttrss")"
-env_set_if_placeholder "${ttrss_env}" "TTRSS_DB_PASS" "$(random_secret)"
+env_set_if_placeholder "${ttrss_env}" "TTRSS_DB_PASS" "password"
 env_set_file "${ttrss_env}" "TTRSS_SELF_URL_PATH" "${PUBLIC_SCHEME}://ttrss.${DOMAIN}/tt-rss/"
 
 munin_env="$(service_abs_dir "infra-munin")/$(service_env_file "infra-munin")"
@@ -185,13 +203,11 @@ if [[ -n "${HOST_IFACE}" ]]; then
 fi
 if [[ -n "${OPENVPN_ADMIN_PASSWORD}" ]]; then
   env_set_file "${openvpn_env}" "OPENVPN_ADMIN_PASSWORD" "${OPENVPN_ADMIN_PASSWORD}"
-else
-  env_set_if_placeholder "${openvpn_env}" "OPENVPN_ADMIN_PASSWORD" "$(random_secret)"
 fi
 
 epg_env="$(service_abs_dir "app-mirakurun-epgstation")/$(service_env_file "app-mirakurun-epgstation")"
-env_set_if_placeholder "${epg_env}" "EPG_DB_PASSWORD" "$(random_secret)"
-env_set_if_placeholder "${epg_env}" "EPG_DB_ROOT_PASSWORD" "$(random_secret)"
+env_set_if_placeholder "${epg_env}" "EPG_DB_PASSWORD" "epgstation"
+env_set_if_placeholder "${epg_env}" "EPG_DB_ROOT_PASSWORD" "epgstation"
 
 for service_name in \
   "infra-reverse-proxy" \

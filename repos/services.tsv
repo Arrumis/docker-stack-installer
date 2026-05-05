@@ -1,10 +1,11 @@
 # service_name	repo_dir	env_file	compose_override(optional)	legacy_compose_file(optional)
+# compose_override は service repo 相対、親 repo 相対、絶対パスの順で解決します。
 infra-reverse-proxy	infra-reverse-proxy	.env.local
-app-wordpress	app-wordpress	.env.local
-app-ttrss	app-ttrss	.env.local
+app-wordpress	app-wordpress	.env.local	overrides/app-wordpress.runtime.yaml
+app-ttrss	app-ttrss	.env.local	overrides/app-ttrss.runtime.yaml
 infra-fail2ban	infra-fail2ban	.env.local
 infra-munin	infra-munin	.env.local
 app-syncthing	app-syncthing	.env.local
-app-openvpn	app-openvpn	.env.local
+app-openvpn	app-openvpn	.env.local	overrides/app-openvpn.runtime.yaml
 app-tategaki	app-tategaki	.env.local
 app-mirakurun-epgstation	app-mirakurun-epgstation	.env.local	auto

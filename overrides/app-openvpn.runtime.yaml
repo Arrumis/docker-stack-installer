@@ -1,0 +1,6 @@
+# 旧 OpenVPN AS の /config をそのまま読むため、現行PCで稼働している
+# linuxserver/openvpn-as の同一 digest に固定します。
+# latest へ上げると既存 config 初期化処理で失敗することがあります。
+services:
+  openvpn-as:
+    image: lscr.io/linuxserver/openvpn-as@sha256:651e0d9174a2faa46f65807b39e3a8b70b2df3232d3f78f734d4bac37fca486f

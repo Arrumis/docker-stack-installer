@@ -468,6 +468,34 @@ service_compose_override_file() {
   printf '%s\n' "${override_file}"
 }
 
+service_compose_override_path() {
+  local service_name="$1"
+  local override_file
+  local service_dir
+
+  override_file="$(service_compose_override_file "${service_name}")"
+  [[ -n "${override_file}" ]] || return 0
+
+  service_dir="$(service_abs_dir "${service_name}")"
+
+  case "${override_file}" in
+    /*)
+      if [[ -f "${override_file}" ]]; then
+        printf '%s\n' "${override_file}"
+      fi
+      ;;
+    *)
+      # app-mirakurun-epgstation の hardware override は service repo 側にある。
+      # 親 repo で runtime 互換を吸収する override は REPO_ROOT 側に置く。
+      if [[ -f "${service_dir}/${override_file}" ]]; then
+        printf '%s\n' "${service_dir}/${override_file}"
+      elif [[ -f "${REPO_ROOT}/${override_file}" ]]; then
+        printf '%s\n' "${REPO_ROOT}/${override_file}"
+      fi
+      ;;
+  esac
+}
+
 service_legacy_compose_file() {
   local service_name="$1"
   if [[ -f "${LEGACY_SERVICES_FILE}" ]]; then
@@ -494,24 +522,24 @@ service_compose_args() {
   local service_name="$1"
   local service_dir
   local env_file
-  local compose_override
+  local compose_override_path
 
   apply_unified_overrides_for_service "${service_name}"
 
   service_dir="$(service_abs_dir "${service_name}")"
   env_file="$(service_env_file "${service_name}")"
-  compose_override="$(service_compose_override_file "${service_name}")"
+  compose_override_path="$(service_compose_override_path "${service_name}")"
 
   if [[ -n "${env_file}" && -f "${service_dir}/${env_file}" ]]; then
     printf -- "-f\n%s\n" "${service_dir}/compose.yaml"
-    if [[ -n "${compose_override}" && -f "${service_dir}/${compose_override}" ]]; then
-      printf -- "-f\n%s\n" "${service_dir}/${compose_override}"
+    if [[ -n "${compose_override_path}" ]]; then
+      printf -- "-f\n%s\n" "${compose_override_path}"
     fi
     printf -- "--env-file\n%s\n" "${service_dir}/${env_file}"
   else
     printf -- "-f\n%s\n" "${service_dir}/compose.yaml"
-    if [[ -n "${compose_override}" && -f "${service_dir}/${compose_override}" ]]; then
-      printf -- "-f\n%s\n" "${service_dir}/${compose_override}"
+    if [[ -n "${compose_override_path}" ]]; then
+      printf -- "-f\n%s\n" "${compose_override_path}"
     fi
   fi
 }

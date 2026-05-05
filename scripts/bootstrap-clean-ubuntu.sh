@@ -354,7 +354,7 @@ EOF
   fi
   if [[ -z "${OPENVPN_ADMIN_PASSWORD}" ]]; then
     clear_guided_screen "8. OpenVPN 管理者パスワード"
-    prompt_secret_confirm OPENVPN_ADMIN_PASSWORD "OpenVPN 管理者パスワード。空なら自動生成"
+    prompt_secret_confirm OPENVPN_ADMIN_PASSWORD "OpenVPN 管理者パスワード。空なら既存設定を維持して変更しない"
   fi
 fi
 
@@ -397,7 +397,6 @@ random_secret_local() {
 
 if [[ "${GUIDED}" -eq 1 ]]; then
   BASIC_AUTH_PASSWORD="${BASIC_AUTH_PASSWORD:-$(random_secret_local)}"
-  OPENVPN_ADMIN_PASSWORD="${OPENVPN_ADMIN_PASSWORD:-$(random_secret_local)}"
 fi
 
 mkdir -p "${STACK_ROOT}"

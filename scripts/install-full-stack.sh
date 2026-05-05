@@ -190,6 +190,10 @@ preinstall_service() {
 
 postinstall_service() {
   local service_name="$1"
+  local service_dir
+  local env_file
+  local openvpn_admin_password
+
   case "${service_name}" in
     infra-reverse-proxy)
       if docker compose -f "$(service_abs_dir "${service_name}")/compose.yaml" --env-file "$(service_abs_dir "${service_name}")/$(service_env_file "${service_name}")" exec -T nginx-proxy nginx -t >/dev/null 2>&1; then
@@ -197,7 +201,17 @@ postinstall_service() {
       fi
       ;;
     app-openvpn)
-      run_service_script_if_present "${service_name}" "scripts/set-admin-password.sh"
+      service_dir="$(service_abs_dir "${service_name}")"
+      env_file="$(service_env_file "${service_name}")"
+      openvpn_admin_password="$(env_get_file "${service_dir}/${env_file}" "OPENVPN_ADMIN_PASSWORD" 2>/dev/null || true)"
+      case "${openvpn_admin_password}" in
+        ""|change-me)
+          echo "SKIP app-openvpn: OPENVPN_ADMIN_PASSWORD が未指定のため admin パスワード変更は行いません"
+          ;;
+        *)
+          run_service_script_if_present "${service_name}" "scripts/set-admin-password.sh"
+          ;;
+      esac
       ;;
     app-ttrss)
       run_service_script_if_present "${service_name}" "scripts/capture-admin-password.sh"

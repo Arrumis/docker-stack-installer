@@ -186,6 +186,20 @@ GLOBAL__BASIC_AUTH_PASSWORD=自分で決めた強いパスワード
 
 パスワードや個人環境の値は、必ず `.env.local` または `stack.service.env.local` にだけ書きます。`.env.example` は公開用の見本なので、実パスワードや個人情報は入れません。
 
+既存HDDをそのまま引き継ぐため、親 repo では一部サービスに runtime 互換 override を重ねます。
+これは `repos/services.tsv` から `overrides/*.runtime.yaml` を読み込む仕組みです。
+旧DBの中身と合わない値に変えると「新規DB」として見えてしまうため、既定値も旧稼働コンテナへ寄せています。
+
+| サービス | 引き継ぎ互換の要点 |
+|---|---|
+| WordPress | DB 名 `wp-db`、ユーザー `wp-db-user`、パスワード `wp-db-pw` を既定にします |
+| ttrss | 旧 `cthulhoo/*` イメージと `PGDATA=/var/lib/postgresql/data` を使います |
+| OpenVPN AS | 旧 `/config` を読むため、稼働実績のある linuxserver/openvpn-as digest に固定します |
+| Mirakurun / EPGStation | DB パスワード `epgstation` を既定にし、チューナー自動判定は service repo 側の override を使います |
+
+OpenVPN の admin パスワードは、明示指定した場合だけ変更します。
+既存 `/config` を引き継ぐ場合、空のままなら既存ユーザー情報を維持します。
+
 手動ルートで clone した場合や、bootstrap 後に設定を調整して再実行したい場合は、env を環境に合わせてから次を実行します。
 
 ```bash
