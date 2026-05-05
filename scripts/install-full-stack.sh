@@ -73,6 +73,72 @@ run_service_script_if_present() {
   fi
 }
 
+run_sudo_if_needed() {
+  if [[ "$(id -u)" -eq 0 ]]; then
+    "$@"
+    return 0
+  fi
+
+  sudo "$@"
+}
+
+repair_mirakurun_config_permissions() {
+  local service_name="app-mirakurun-epgstation"
+  local service_dir
+  local env_file
+  local config_dir
+  local current_uid
+  local current_gid
+  local entries=()
+  local path
+  local needs_repair=0
+  local did_repair=0
+
+  service_dir="$(service_abs_dir "${service_name}")"
+  env_file="$(service_env_file "${service_name}")"
+
+  [[ -n "${env_file}" && -f "${service_dir}/${env_file}" ]] || return 0
+
+  apply_unified_overrides_for_service "${service_name}"
+
+  config_dir="$(env_get_file "${service_dir}/${env_file}" "MIRAKURUN_CONFIG_DIR" 2>/dev/null || true)"
+  config_dir="${config_dir:-}"
+  [[ -n "${config_dir}" && -d "${config_dir}" ]] || return 0
+
+  # 旧HDDから引き継いだ Mirakurun 設定が root:root 0600 のままだと、
+  # init-data-dirs.sh が server.yml を grep/更新できずに止まる。
+  # 録画データや他サービスには触れず、Mirakurun の conf 直下だけを補正する。
+  current_uid="$(id -u)"
+  current_gid="$(id -g)"
+
+  if [[ ! -r "${config_dir}" || ! -w "${config_dir}" || ! -x "${config_dir}" ]]; then
+    echo "== repair app-mirakurun-epgstation: Mirakurun 設定権限 =="
+    echo "Mirakurun 設定ディレクトリを init-data-dirs.sh が読めるように補正します: ${config_dir}"
+    run_sudo_if_needed chown "${current_uid}:${current_gid}" "${config_dir}"
+    run_sudo_if_needed chmod u+rwx "${config_dir}"
+    did_repair=1
+  fi
+
+  while IFS= read -r -d '' path; do
+    entries+=("${path}")
+    if [[ ! -r "${path}" || ! -w "${path}" ]]; then
+      needs_repair=1
+    fi
+  done < <(find "${config_dir}" -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) -print0)
+
+  [[ "${needs_repair}" -eq 1 ]] || return 0
+
+  if [[ "${did_repair}" -eq 0 ]]; then
+    echo "== repair app-mirakurun-epgstation: Mirakurun 設定権限 =="
+    echo "Mirakurun 設定ファイルを init-data-dirs.sh が読めるように補正します: ${config_dir}"
+  fi
+
+  if [[ "${#entries[@]}" -gt 0 ]]; then
+    run_sudo_if_needed chown "${current_uid}:${current_gid}" "${entries[@]}"
+    run_sudo_if_needed chmod u+rw "${entries[@]}"
+  fi
+}
+
 setup_munin_host_node() {
   local service_name="infra-munin"
   local service_dir
@@ -115,6 +181,7 @@ preinstall_service() {
     app-wordpress|app-ttrss|app-syncthing|app-openvpn|app-tategaki|app-mirakurun-epgstation)
       if [[ "${service_name}" == "app-mirakurun-epgstation" ]]; then
         run_service_script_if_present "${service_name}" "scripts/prepare-host.sh"
+        repair_mirakurun_config_permissions
       fi
       run_service_script_if_present "${service_name}" "scripts/init-data-dirs.sh"
       ;;
