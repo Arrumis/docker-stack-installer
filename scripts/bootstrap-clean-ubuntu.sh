@@ -284,7 +284,12 @@ expand_user_path() {
       printf '%s\n' "${USER_HOME}"
       ;;
     "~/"*)
-      printf '%s/%s\n' "${USER_HOME}" "${value#~/}"
+      printf '%s/%s\n' "${USER_HOME}" "${value#\~/}"
+      ;;
+    */~/*)
+      # 古い入力や手動編集で /home/user/~/docker-data のような値が残っても、
+      # 以後の env には通常の絶対パスとして保存する。
+      printf '%s\n' "${value//\/~\//\/}"
       ;;
     *)
       printf '%s\n' "${value}"
@@ -326,7 +331,7 @@ EOF
   ROOT_HOST="${ROOT_HOST:-${DOMAIN}}"
   LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-admin@${DOMAIN}}"
   HOST_DATA_ROOT="${HOST_DATA_ROOT:-~/docker-data}"
-  RECORDED_ROOT="${RECORDED_ROOT:-~/recorded}"
+  RECORDED_ROOT="${RECORDED_ROOT:-~/docker-data/recorded}"
   if [[ "${AUTO_ENABLE_HTTPS}" -eq 1 && "${PUBLIC_SCHEME}" == "http" ]]; then
     PUBLIC_SCHEME="https"
   fi
@@ -348,13 +353,11 @@ EOF
 
 録画ファイルの親ディレクトリ:
   EPGStation の録画ファイルを保存する場所です。
-  例: ~/recorded
+  例: ~/docker-data/recorded
   録画系を使わない場合でも、そのまま Enter で問題ありません。
 EOF
   prompt_value HOST_DATA_ROOT "永続データの親ディレクトリ" "${HOST_DATA_ROOT}"
   prompt_value RECORDED_ROOT "録画ファイルの親ディレクトリ" "${RECORDED_ROOT}"
-  HOST_DATA_ROOT="$(expand_user_path "${HOST_DATA_ROOT}")"
-  RECORDED_ROOT="$(expand_user_path "${RECORDED_ROOT}")"
   clear_guided_screen "6. 管理画面 Basic 認証ユーザー名"
   prompt_value BASIC_AUTH_USER "管理画面 Basic 認証ユーザー名" "${BASIC_AUTH_USER}"
   if [[ -z "${BASIC_AUTH_PASSWORD}" ]]; then
@@ -385,6 +388,13 @@ fi
 if [[ -n "${DOMAIN}" ]]; then
   ROOT_HOST="${ROOT_HOST:-${DOMAIN}}"
   LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-admin@${DOMAIN}}"
+fi
+
+if [[ -n "${HOST_DATA_ROOT}" ]]; then
+  HOST_DATA_ROOT="$(expand_user_path "${HOST_DATA_ROOT}")"
+fi
+if [[ -n "${RECORDED_ROOT}" ]]; then
+  RECORDED_ROOT="$(expand_user_path "${RECORDED_ROOT}")"
 fi
 
 sudo -v

@@ -34,7 +34,7 @@ normalize_stack_path() {
       printf '%s\n' "${HOME}"
       ;;
     "~/"*)
-      printf '%s/%s\n' "${HOME}" "${path_value#~/}"
+      printf '%s/%s\n' "${HOME}" "${path_value#\~/}"
       ;;
     */~/*)
       printf '%s\n' "${path_value//\/~\//\/}"
@@ -142,15 +142,16 @@ select_epg_db_dir() {
   local layout_root="$2"
   local candidate
 
-  # 旧 docker-mirakurun-epgstation 系は DB を ./mariadb に置く構成がある。
-  # 既存データ引き継ぎでは、空の mira_sql を新規DBとして使うより、
-  # mysql/epgstation を持つ既存DBディレクトリを優先する。
+  # 現行の稼働実績に合わせ、EPGStation DB は mirakurun/mira_sql を第一候補にする。
+  # 古い ./mariadb が残っている環境では、存在チェックだけで mariadb を選ぶと
+  # 録画ファイルより古い DB を参照して一覧が途中で止まるため、後方互換候補へ回す。
   for candidate in \
+    "${layout_root}/mirakurun/mira_sql" \
+    "${service_root}/mirakurun/mira_sql" \
+    "${service_root}/mirakurun-epgstation/mirakurun/mira_sql" \
     "${service_root}/mariadb" \
     "${service_root}/mirakurun-epgstation/mariadb" \
-    "${layout_root}/mariadb" \
-    "${layout_root}/mirakurun/mira_sql" \
-    "${service_root}/mirakurun/mira_sql"
+    "${layout_root}/mariadb"
   do
     if [[ -d "${candidate}/mysql" && -d "${candidate}/epgstation" ]]; then
       printf '%s\n' "${candidate}"
