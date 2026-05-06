@@ -21,7 +21,7 @@ while IFS= read -r service_name; do
   service_dir="$(service_abs_dir "${service_name}")"
   legacy_compose="$(service_legacy_compose_file "${service_name}")"
 
-  echo "new repo: ${service_dir}"
+  echo "新リポジトリ: ${service_dir}"
   echo "legacy compose: ${legacy_compose:-<none>}"
 
   if [[ -n "${legacy_compose}" && -f "${legacy_compose}" ]]; then
@@ -52,4 +52,3 @@ while IFS= read -r service_name; do
 
   echo
 done < <(list_target_services "$@")
-

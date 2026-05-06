@@ -82,14 +82,14 @@ write_ttrss_admin_password() {
   printf 'このファイルは、このPCへインストールしたときの設定控えです。\n'
   printf 'GitHubへ上げないローカル専用ファイルです。\n\n'
   printf '%s\n' "- 作成日時: \`$(date '+%Y-%m-%d %H:%M:%S %z')\`"
-  printf '%s\n' "- 親 repo: \`${REPO_ROOT}\`"
+  printf '%s\n' "- 親リポジトリ: \`${REPO_ROOT}\`"
   printf '%s\n\n' "- stack root: \`${STACK_ROOT}\`"
   printf '注意: パスワード忘れに備えるため、このファイルにはパスワードなどの秘密情報も実値で記録します。\n'
   printf 'GitHubへ上げず、このPC内の復旧用控えとして扱ってください。\n'
   printf 'ファイル権限は作成後に owner だけ読める `600` へ変更します。\n\n'
 } >"${OUTPUT_FILE}"
 
-write_env_table "親 repo の基本設定" "${STACK_ENV_FILE}"
+write_env_table "親リポジトリの基本設定" "${STACK_ENV_FILE}"
 write_env_table "統括 env" "${UNIFIED_ENV_FILE}"
 
 printf '## サービス別 env\n\n' >>"${OUTPUT_FILE}"

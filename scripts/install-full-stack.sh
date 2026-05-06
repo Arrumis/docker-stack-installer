@@ -16,7 +16,7 @@ usage() {
 Usage: ./scripts/install-full-stack.sh [options] [service ...]
 
 Options:
-  --skip-bootstrap   Do not clone/pull sibling repos
+  --skip-bootstrap   関連リポジトリの取得または更新を行いません
   --skip-init-env    Do not create missing .env.local files
   --skip-doctor      Skip doctor.sh
   --skip-check       Skip check-layout.sh
@@ -281,7 +281,7 @@ fi
 for service_name in "${target_services[@]}"; do
   service_dir="$(service_abs_dir "${service_name}")"
   if [[ ! -d "${service_dir}" ]]; then
-    echo "SKIP ${service_name}: repo dir not found at ${service_dir}"
+    echo "SKIP ${service_name}: リポジトリディレクトリが見つかりません: ${service_dir}"
     continue
   fi
 

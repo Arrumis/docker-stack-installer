@@ -1,5 +1,5 @@
-# 旧稼働コンテナへ寄せるための親 repo 管理 override です。
-# DB 名・ユーザー・パスワードは configure-default-envs.sh 側で旧値を入れます。
+# 旧稼働コンテナへ寄せるための、親リポジトリ管理の追加 Compose 設定です。
+# データベース名・ユーザー・パスワードは configure-default-envs.sh 側で旧値を入れます。
 services:
   wordpress:
     image: wordpress

@@ -43,13 +43,13 @@ else
 fi
 echo
 
-echo "== repos =="
+echo "== リポジトリ =="
 while IFS= read -r service_name; do
   service_dir="$(service_abs_dir "${service_name}")"
   if [[ -d "${service_dir}/.git" ]]; then
-    echo "OK repo: ${service_name}"
+    echo "OK リポジトリ: ${service_name}"
   else
-    echo "MISS repo: ${service_name} -> ${service_dir}"
+    echo "未取得リポジトリ: ${service_name} -> ${service_dir}"
     status=1
   fi
 done < <(list_target_services "$@")
@@ -63,4 +63,3 @@ else
 fi
 
 exit "${status}"
-

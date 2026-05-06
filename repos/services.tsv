@@ -1,5 +1,5 @@
-# service_name	repo_dir	env_file	compose_override(optional)	legacy_compose_file(optional)
-# compose_override は service repo 相対、親 repo 相対、絶対パスの順で解決します。
+# サービス名	リポジトリディレクトリ	設定ファイル	追加Composeファイル(任意)	旧Composeファイル(任意)
+# 追加Composeファイルは、サービス用リポジトリ相対、親リポジトリ相対、絶対パスの順で解決します。
 infra-reverse-proxy	infra-reverse-proxy	.env.local
 app-wordpress	app-wordpress	.env.local	overrides/app-wordpress.runtime.yaml
 app-ttrss	app-ttrss	.env.local	overrides/app-ttrss.runtime.yaml

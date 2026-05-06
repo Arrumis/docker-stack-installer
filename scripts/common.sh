@@ -553,8 +553,8 @@ service_compose_override_path() {
       fi
       ;;
     *)
-      # app-mirakurun-epgstation の hardware override は service repo 側にある。
-      # 親 repo で runtime 互換を吸収する override は REPO_ROOT 側に置く。
+      # app-mirakurun-epgstation のハードウェア追加設定はサービス用リポジトリ側にある。
+      # 親リポジトリで実行時互換を吸収する追加設定は REPO_ROOT 側に置く。
       if [[ -f "${service_dir}/${override_file}" ]]; then
         printf '%s\n' "${service_dir}/${override_file}"
       elif [[ -f "${REPO_ROOT}/${override_file}" ]]; then

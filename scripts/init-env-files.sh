@@ -17,7 +17,7 @@ while IFS= read -r service_name; do
   env_file="$(service_env_file "${service_name}")"
 
   if [[ ! -d "${service_dir}" ]]; then
-    echo "SKIP ${service_name}: repo dir not found at ${service_dir}"
+    echo "SKIP ${service_name}: リポジトリディレクトリが見つかりません: ${service_dir}"
     continue
   fi
 

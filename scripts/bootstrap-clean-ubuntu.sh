@@ -7,7 +7,7 @@ USER_HOME="${USER_HOME:-${HOME}}"
 STACK_ROOT="${STACK_ROOT:-${USER_HOME}/docker-stack}"
 STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-your-github-user}"
 CLONE_PROTOCOL="${CLONE_PROTOCOL:-https}"
-# raw.githubusercontent.com から直接実行した branch と clone する branch を合わせる。
+# raw.githubusercontent.com から直接実行したブランチと、取得するブランチを合わせる。
 # 通常運用では main を使い、検証ブランチを使う場合だけ --branch で明示する。
 INSTALLER_BRANCH="${INSTALLER_BRANCH:-main}"
 DOMAIN="${DOMAIN:-}"
@@ -48,7 +48,7 @@ on_bootstrap_exit() {
 
 インストールが途中で止まりました。
 一時ファイルは掃除しました。
-clone 済み repo と env は再実行に使えるため残しています。
+取得済みリポジトリと設定ファイルは再実行に使えるため残しています。
 
 再実行する場合:
   cd ${INSTALLER_DIR}
@@ -70,7 +70,7 @@ usage() {
 
 主なオプション:
   --guided                       対話式で必要値を聞き、そのままインストールまで進めます
-  --prepare-only                 必要パッケージ、repo取得、env作成まで行って止めます
+  --prepare-only                 必要パッケージ、リポジトリ取得、設定作成まで行って止めます
   --domain <domain>              公開ドメインです。例: sample.com
   --owner <github-owner>         GitHub のユーザー名または owner 名です
 
@@ -78,8 +78,8 @@ usage() {
   --root-host <host>             WordPress を出すルートホスト名です。省略時は domain と同じです
   --email <email>                Let's Encrypt の通知メールです
   --public-scheme <http|https>   公開URLの方式です
-  --stack-root <path>            repo を clone する親ディレクトリです
-  --protocol <https|ssh>         sibling repo の clone 方式です
+  --stack-root <path>            リポジトリを取得する親ディレクトリです
+  --protocol <https|ssh>         関連リポジトリの取得方式です
   --branch <branch>              docker-stack-installer の branch です。通常は指定不要です
   --exclude-services <list>      インストールしないDockerを空白区切りで指定します
   --openvpn-admin-password <pw>  OpenVPN 管理者パスワードです
@@ -88,7 +88,7 @@ usage() {
   --host-data-root <path>        永続データの親ディレクトリです
   --recorded-root <path>         録画ファイルの親ディレクトリです
   --skip-https                   HTTPS 自動昇格を行いません
-  --skip-install                 repo/env 準備後にインストールせず止めます
+  --skip-install                 リポジトリと設定の準備後にインストールせず止めます
   --skip-verify                  最後の verify-stack.sh を省略します
 EOF
 }
@@ -400,8 +400,8 @@ sudo -v
 
 export DEBIAN_FRONTEND=noninteractive
 # sudo は環境変数を落とすことがあるため、apt/dpkg へ明示的に渡す。
-# docker.io の postinst は daemon restart 確認を出すことがあるので、
-# clean install の bootstrap では非対話で restart 可として進める。
+# docker.io のインストール後処理はデーモン再起動確認を出すことがあるので、
+# 新規インストールでは非対話で再起動可として進める。
 echo 'docker.io docker.io/restart boolean true' | sudo debconf-set-selections
 sudo env DEBIAN_FRONTEND=noninteractive apt-get update
 sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl git docker.io docker-compose-v2
@@ -432,7 +432,7 @@ if [[ ! -d "${INSTALLER_DIR}/.git" ]]; then
       git clone --branch "${INSTALLER_BRANCH}" --single-branch "https://github.com/${STACK_GITHUB_OWNER}/docker-stack-installer.git" "${INSTALLER_DIR}"
       ;;
     *)
-      echo "未対応の clone 方式です: ${CLONE_PROTOCOL}" >&2
+      echo "未対応のリポジトリ取得方式です: ${CLONE_PROTOCOL}" >&2
       exit 1
       ;;
   esac
@@ -559,7 +559,7 @@ if [[ "${PREPARE_ONLY}" -eq 1 ]]; then
   cat <<EOF
 準備が完了しました。
 
-インストーラ repo:
+インストーラリポジトリ:
   ${INSTALLER_DIR}
 
 次の手順:
@@ -581,7 +581,7 @@ fi
 cat <<EOF
 Bootstrap が完了しました。
 
-インストーラ repo:
+インストーラリポジトリ:
   ${INSTALLER_DIR}
 
 次によく使うコマンド:

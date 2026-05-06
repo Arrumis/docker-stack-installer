@@ -14,7 +14,7 @@ while IFS= read -r service_name; do
   echo "== ${service_name} =="
 
   if [[ ! -d "${service_dir}" ]]; then
-    echo "MISSING repo dir: ${service_dir}"
+    echo "リポジトリディレクトリが見つかりません: ${service_dir}"
     status=1
     continue
   fi
@@ -34,4 +34,3 @@ while IFS= read -r service_name; do
 done < <(list_target_services "$@")
 
 exit "${status}"
-

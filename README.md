@@ -1,654 +1,145 @@
 # docker-stack-installer
 
-複数の Docker サービス repo をまとめて確認・起動するための親 repo です。旧 `docker_container_installer_original` のようにテンプレートを大量コピーするのではなく、各 repo を正本として扱う前提に寄せています。公開入口は `infra-reverse-proxy` の `Traefik v2.11` を使います。
+複数の Docker サービス用リポジトリをまとめて準備、設定、起動、確認する親リポジトリです。
+各サービスのリポジトリを正本として扱い、この親リポジトリは全体をつなぐ入口になります。
 
-## 日本語メモ
+## 対象リポジトリ
 
-GitHub のコミット一覧が英語で分かりにくい場合は、[コミット履歴の日本語メモ](docs/COMMIT_HISTORY_JA.md) を見てください。
+標準では次を扱います。
 
-## Quick Start
+- `infra-reverse-proxy`: 公開入口と証明書
+- `infra-fail2ban`: 攻撃元 IP アドレスの遮断と Discord 通知
+- `infra-munin`: 監視画面
+- `app-wordpress`: WordPress
+- `app-ttrss`: Tiny Tiny RSS
+- `app-tategaki`: 縦書き小説リーダー
+- `app-syncthing`: Syncthing
+- `app-openvpn`: OpenVPN Access Server
+- `app-mirakurun-epgstation`: Mirakurun と EPGStation
 
-このプロジェクトの基本方針は「迷わず入る」ことです。
-必要な実値はスクリプトの途中で聞かれるため、導入は次の 4 段階にします。
+## 最短手順
 
-1. 対話式コマンド 1 本で、必要なパッケージと repo を全部そろえる
-2. 質問に答える
-3. 実行コマンド 1 本で、起動と確認まで行う
-4. 完了
-
-### 1. 対話式コマンド
-
-Ubuntu 24.04 / 26.04 系のクリーンOSから始める場合も、まずこの 1 本です。
-`curl` や `git` がまだ無い状態でも、このコマンド内で最小パッケージを入れてから準備を続けます。
+Ubuntu 24.04 / 26.04 系の新しい環境では、まず次を実行します。
 
 ```bash
 bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --guided'
 ```
 
-`--owner Arrumis` は、GitHub の `Arrumis/docker-stack-installer` と sibling repo 群を使うための指定です。
-この repo 群をそのまま使う場合は `Arrumis` のままで問題ありません。
-自分の GitHub アカウントへ fork して使う場合だけ、自分の GitHub owner 名へ置き換えます。
+このコマンドで行うこと:
 
-この対話式コマンドは次をまとめて行います。
+- 必要なパッケージを入れる
+- このリポジトリと各サービス用リポジトリを取得する
+- `stack.env.local` と `stack.service.env.local` を作る
+- 各サービスの `.env.local` を作る
+- 対話式で必要な値を聞く
+- Docker サービスを起動する
+- 起動確認を行う
 
-- `curl` の導入
-- `git` `docker.io` `docker-compose-v2` の導入
-- `docker-stack-installer` の clone / update
-- sibling repo の clone
-- `stack.env.local` の作成
-- `stack.service.env.local` の作成
-- 各 repo の `.env.local` の作成
-- 必要な設定の質問
-- 入力内容の env 反映
-- インストール
-- 起動後確認
-
-### 2. 質問に答える
-
-途中で聞かれる主な内容は次です。
+途中で聞かれる主な内容:
 
 - 公開ドメイン名
-- Let's Encrypt の通知メール
+- 証明書通知を受け取るメールアドレス
 - 永続データの保存先
 - 録画ファイルの保存先
 - Basic 認証のユーザー名とパスワード
 - OpenVPN 管理者パスワード
-- インストールしないDocker
+- 今回インストールしないサービス
 
 分からない項目は Enter で既定値を使えます。
-入力した値は `stack.service.env.local` に残るため、あとから見直せます。
 
-保存先には `~/docker-data` のような `~/` 付きパスも入力できます。
-入力後は `/home/ユーザー名/docker-data` のような絶対パスへ変換して env に保存します。
+## 後から再実行する場合
 
-「インストールしないDocker」は、今回入れないサービスを空白区切りで書く欄です。
-空のまま Enter なら全部入れます。
-対話式では、現在 `repos/services.tsv` に登録されている管理対象サービスを一覧表示します。
-
-例:
-
-```bash
-app-openvpn app-syncthing
-```
-
-最後に「このままインストールと起動確認まで進めますか」と聞かれます。
-ここで `Y` または Enter を押すと、そのまま最後まで進みます。
-ここで `n` を選ぶと、env を確認してから手動で実行できます。
-
-インストール中に失敗または中断した場合、一時ディレクトリは自動で掃除します。
-clone 済み repo と env は再実行に使えるため残します。
-
-インストールログは `logs/install-YYYYmmdd-HHMMSS.log` に保存します。
-失敗した場合は、このログを見るとどこで止まったか追いやすくなります。
-
-### 3. 実行コマンド
-
-対話式の最後で `n` を選んだ場合、または env を後から編集した場合は、この 1 本で起動と確認を行います。
+設定を直したあと、起動と確認をまとめて行います。
 
 ```bash
 cd ~/docker-stack/docker-stack-installer
 ./scripts/run-full-stack.sh
 ```
 
-この中で `install-full-stack.sh` と `verify-stack.sh` を順番に実行します。
-
-### 4. 完了
-
-`verify-stack.sh` が通れば、Docker 群の起動確認まで完了です。
-証明書取得に必要な公開条件が揃っている場合は、`HTTP -> 証明書取得 -> HTTPS` の自動昇格も行われます。
-
-### env を手で確認してから進めたい場合
-
-途中入力ではなく、準備だけ行ってから自分で env を編集したい場合は `--prepare-only` を使います。
+準備だけ行ってから手で設定したい場合:
 
 ```bash
 bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --prepare-only'
 ```
 
-準備が終わったら、通常は `stack.service.env.local` を中心に編集します。
+その後で `stack.service.env.local` を編集します。
 
 ```bash
 cd ~/docker-stack/docker-stack-installer
 nano stack.service.env.local
-nano stack.env.local
 ./scripts/run-full-stack.sh
 ```
 
-### 質問なしで一気に入れたい場合
+## 変更する値
 
-検証用PCなどで、ドメインやメールをコマンドに直接渡して一気に入れることもできます。
-`sample.com` は説明用の仮ドメインなので、実際に使うドメインへ置き換えます。
+公開用の見本には、GitHub に上げてもよい仮の値だけを書いています。
+実際の値は `stack.env.local` または `stack.service.env.local` に書きます。
 
-```bash
-bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain sample.com --email admin@sample.com'
-```
+よく変更する値:
 
-HTTP のまま止めたい場合は、`--skip-https` を付けます。
+- `GLOBAL__DOMAIN`: 公開するドメインです。
+- `GLOBAL__ROOT_HOST`: 親ドメイン直下で使うホスト名です。
+- `GLOBAL__LETSENCRYPT_EMAIL`: 証明書通知を受け取るメールアドレスです。
+- `GLOBAL__HOST_DATA_ROOT`: 各サービスの永続データを置く親ディレクトリです。
+- `GLOBAL__RECORDED_ROOT`: 録画ファイルを置くディレクトリです。
+- `GLOBAL__BASIC_AUTH_USER` と `GLOBAL__BASIC_AUTH_PASSWORD`: 管理系画面の認証情報です。
+- `GLOBAL__DISCORD_WEBHOOK_URL`: fail2ban の通知先 Discord Webhook URL です。
 
-```bash
-bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --domain sample.com --skip-https'
-```
+パスワードや Discord Webhook URL は秘密値です。GitHub に上げるファイルへは書きません。
 
-## サンプル値の置き換え
+## 既存 HDD を使う場合
 
-README や `.env.example` には、GitHub に公開しても安全な仮の値が入っています。これらはそのまま使う値ではありません。
+既存データを使う場合も、基本は対話式の導入を使います。
+このリポジトリのスクリプトは、既存データの削除や大規模なコピーを勝手には行いません。
 
-| サンプル値 | 何に置き換えるか | 例 |
-|---|---|---|
-| `sample.com` | 実際に公開するドメイン | `ponkotu.mydns.jp` |
-| `admin@sample.com` | 証明書通知を受け取れるメール | `admin@ponkotu.mydns.jp` |
-| `your-github-user` | GitHub のユーザー名または owner 名 | `Arrumis` |
-| `change-me` | 自分で決めた強いパスワード | GitHub には書かない |
-| `/srv/docker-data` | 永続データを置く親ディレクトリ。対話式の既定値は `~/docker-data` | `/mnt/data/docker-data` |
-| `/srv/docker-recorded` | 録画ファイルを置くディレクトリ。対話式の既定値は `~/docker-data/recorded` | `/mnt/recorded` |
+標準の保存先名:
 
-永続データの配下は、現在稼働中の旧コンテナと同じ名前を標準にしています。
-新PCへHDDを移して次のようにまとめてリンクした場合も、その名前をそのまま使います。
+- WordPress: `wp/html`、`wp/db_data`
+- Tiny Tiny RSS: `ttrss/ttrss_app`、`ttrss/ttrss_db`、`ttrss/config.d`
+- tategaki: `tategaki`
+- Syncthing: `sync/config`、`sync/data`
+- OpenVPN: `openvpn`
+- Mirakurun / EPGStation: `mirakurun/*`、`epgstation/*`、`recorded`
 
-```bash
-ln -s /mnt/data/var/docker/* ~/docker-data/
-ln -s /mnt/data/recorded ~/docker-data/
-```
+WordPress のデータベースは、稼働中のディレクトリをそのままコピーせず、ダンプから復元します。
+詳しくは `app-wordpress` の README を見てください。
 
-主な自動展開先は次の通りです。
+録画系はホスト側のチューナードライバや `pcscd` 停止が必要です。
+この部分だけは、Docker の外側にも変更が入ります。
 
-| サービス | 標準の保存先 |
-|---|---|
-| WordPress | `wp/html`, `wp/db_data` |
-| ttrss | `ttrss/ttrss_app`, `ttrss/ttrss_db`, `ttrss/config.d` |
-| tategaki | `tategaki` |
-| Syncthing | `sync/config`, `sync/data` |
-| OpenVPN AS | `openvpn` 直下 |
-| Mirakurun / EPGStation | `mirakurun/conf`, `mirakurun/data`, `mirakurun/mira_sql`, `epgstation/*`, `recorded` |
+## 生成される控え
 
-現行PCの tategaki だけは、旧設計で `docker20250920/compose/tategaki/data` に実データを置いていた時期があります。
-新PCへHDDごと移す前に、一度だけ `/mnt/.../var/docker/tategaki` へ移してください。
-
-```bash
-mkdir -p /mnt/sda/var/docker/tategaki
-rsync -aHAX --info=progress2 \
-  /home/hiyori2023/docker20250920/compose/tategaki/data/ \
-  /mnt/sda/var/docker/tategaki/
-```
-
-移行後の新環境では `GLOBAL__HOST_DATA_ROOT/tategaki` を `app-tategaki` の `/app/data` として使います。
-
-まとめて変更したい値は、まず `stack.service.env.local` に書きます。
-
-```bash
-GLOBAL__DOMAIN=ponkotu.mydns.jp
-GLOBAL__ROOT_HOST=ponkotu.mydns.jp
-GLOBAL__LETSENCRYPT_EMAIL=admin@ponkotu.mydns.jp
-GLOBAL__HOST_DATA_ROOT=/mnt/data/docker-data
-GLOBAL__RECORDED_ROOT=/mnt/data/docker-data/recorded
-GLOBAL__BASIC_AUTH_USER=admin
-GLOBAL__BASIC_AUTH_PASSWORD=自分で決めた強いパスワード
-```
-
-パスワードや個人環境の値は、必ず `.env.local` または `stack.service.env.local` にだけ書きます。`.env.example` は公開用の見本なので、実パスワードや個人情報は入れません。
-
-既存HDDをそのまま引き継ぐため、親 repo では一部サービスに runtime 互換 override を重ねます。
-これは `repos/services.tsv` から `overrides/*.runtime.yaml` を読み込む仕組みです。
-旧DBの中身と合わない値に変えると「新規DB」として見えてしまうため、既定値も旧稼働コンテナへ寄せています。
-
-| サービス | 引き継ぎ互換の要点 |
-|---|---|
-| WordPress | DB 名 `wp-db`、ユーザー `wp-db-user`、パスワード `wp-db-pw` を既定にします。稼働中DBを移す場合、`wp/db_data` は raw rsync ではなく `app-wordpress/scripts/restore-db-dump.sh` で dump から復旧します |
-| ttrss | フォルダ構造と DB 接続値は旧環境を踏襲します。旧 `cthulhoo/*` image は pull できないため、image だけ公式案内の `supahgreg/*` を使います |
-| OpenVPN AS | 旧 `/config` を読むため、稼働実績のある linuxserver/openvpn-as digest に固定します。起動前に `tun` と iptables 系カーネルモジュールも確認します |
-| Mirakurun / EPGStation | DB パスワード `epgstation` を既定にします。DB は現行稼働構成に合わせて `mirakurun/mira_sql` を優先し、古い `mirakurun-epgstation/mariadb` は後方互換候補として扱います。録画保存先は `GLOBAL__RECORDED_ROOT` をそのまま使うため、HDD移行時は `~/docker-data/recorded` のような既存 symlink を指定します |
-
-OpenVPN の admin パスワードは、明示指定した場合だけ変更します。
-既存 `/config` を引き継ぐ場合、空のままなら既存ユーザー情報を維持します。
-
-ttrss のフォルダ構造と DB 接続値は、既存データを読めるように旧環境を踏襲します。
-
-- データベース: `GLOBAL__HOST_DATA_ROOT/ttrss/ttrss_db`
-- アプリ永続領域: `GLOBAL__HOST_DATA_ROOT/ttrss/ttrss_app`
-- 設定ディレクトリ: `GLOBAL__HOST_DATA_ROOT/ttrss/config.d`
-- DB ユーザー: `postgres`
-- DB 名: `postgres`
-- DB パスワード: `password`
-- PostgreSQL データ位置: `/var/lib/postgresql/data`
-
-手動ルートで clone した場合や、bootstrap 後に設定を調整して再実行したい場合は、env を環境に合わせてから次を実行します。
-
-```bash
-./scripts/run-full-stack.sh
-```
-
-### 既存HDDデータで入れる場合
-
-旧HDDデータをマウントして使う場合は、既存データ引き継ぎ用の入口を使えます。
-このスクリプトは env 作成、repo 更新、既存スクリプト呼び出しをまとめるだけで、データ削除や rsync は行いません。
-
-既存HDDデータで入れる場合も、値はコマンドへ直書きせず、対話式で入力します。
-通常は main の bootstrap 導線をそのまま使います。
-
-```bash
-bash -lc 'set -e; sudo apt-get update; sudo apt-get install -y ca-certificates curl; curl -fsSL https://raw.githubusercontent.com/Arrumis/docker-stack-installer/main/scripts/bootstrap-clean-ubuntu.sh | bash -s -- --owner Arrumis --guided'
-```
-
-すでに repo を clone 済みの場合も、基本は上の bootstrap 導線で入れ直せます。
-値をコマンドへ直書きせずに済ませたい場合は、`--guided` を使って対話で入力してください。
-汎用入口の細かいオプションを確認したい場合だけ、次を見ます。
-
-```bash
-cd ~/docker-stack/docker-stack-installer
-./scripts/install-existing-data-stack.sh --help
-```
-
-OpenVPN admin パスワードは、指定した場合だけ変更します。
-既存 `openvpn` データのユーザー情報をそのまま使う場合は指定しません。
-
-`app-openvpn` を含める場合は、OpenVPN AS が `tun` と iptables を使えるように `modprobe` と `/etc/modules-load.d/openvpn-as.conf` の作成を行います。
-
-`app-mirakurun-epgstation` を含める場合は、旧 `mirakurun.sh` から移したホスト準備スクリプトも実行されます。ここでは `sudo apt-get install` と `pcscd` 停止が入るため、録画環境だけはホスト側変更を伴います。
-
-## インストール後の設定一覧
-
-インストール後には、親 repo 直下に `local-install-summary.md` を出力します。
-これはそのPCで使った設定の控えです。
-パスワード忘れに備えるため、パスワードも実値で記録します。
-`app-ttrss` を入れた場合は、初回ログイン用の `admin` パスワードも `ttrss_admin_password.txt` から読み取り、この一覧に追記します。
+インストール後に `local-install-summary.md` を作ります。
+そのパソコンで使った設定を確認するための控えです。
 
 ```bash
 less local-install-summary.md
 ```
 
-このファイルは `.gitignore` に入っているため通常は GitHub へ上がりません。
-作成後は owner だけ読める `600` に変更します。
-ローカル専用の復旧用控えとして扱ってください。
+このファイルは GitHub に上げない設定です。
 
-## Munin のホスト側設定
+## よく使う確認
 
-Munin の Web UI は `infra-munin` コンテナで起動します。
-ベースPC側の `munin-node` 監視も Docker 群の監視に必要なため、`infra-munin` をインストール対象にしている場合は一括インストール中に自動実行します。
-
-```bash
-cd ~/docker-stack/infra-munin
-./scripts/setup-host-munin-node.sh 127.0.0.1
-```
-
-この処理では、ホストOSへ `munin-node` と Docker 監視プラグインを入れます。
-手動で再実行したい場合だけ、上のコマンドを使います。
-Docker からの接続許可範囲は `infra-munin/.env.local` の `MUNIN_ALLOWED_CIDR` を使います。
-
-## 役割
-
-- 各サービス repo の配置確認
-- `compose.yaml` と `.env.local` の存在確認
-- 必要なサービスだけ一括起動
-
-## 管理対象
-
-初期状態では以下を前提にしています。
-
-基盤:
-
-- `infra-reverse-proxy`
-- `infra-fail2ban`
-- `infra-munin`
-
-アプリ:
-
-- `app-tategaki`
-- `app-wordpress`
-- `app-ttrss`
-- `app-syncthing`
-- `app-openvpn`
-- `app-mirakurun-epgstation`
-
-一覧は `repos/services.tsv` で管理します。
-
-## 初期設定
-
-通常は Quick Start の対話式コマンドが、必要な env ファイルを自動で作ります。
-手動で repo を clone した場合だけ、`stack.env.example` から `stack.env.local` を作ってください。
-
-インストール時に触る設定ファイルは、まず次の 2 種類です。
-
-- `stack.env.local`
-  - 親 repo 用です
-  - 「repo をどこへ clone するか」「どのサービスを対象にするか」のような全体設定を書きます
-- `stack.service.env.local`
-  - 親 repo 用です
-  - 各 service repo の `.env.local` に対して、親側から優先して上書きしたい値を書きます
-- 各 service repo の `.env.local`
-  - 各 Docker サービス用です
-  - ポート、公開ホスト名、データ保存先、DB パスワードなど、そのサービス固有の値を書きます
-
-先に `stack.env.local` を作り、その後 `init-env-files.sh` で `stack.service.env.local` と各 service repo の `.env.local` を作る流れです。
-
-### `stack.env.local`
-
-`stack.env.local` は親 repo の制御用ファイルです。ここにはサービス本体の秘密情報ではなく、導入全体の動き方を書きます。
-
-```bash
-STACK_ROOT=/path/to/workspace
-STACK_GITHUB_OWNER=your-github-user
-CLONE_PROTOCOL=https
-SERVICES="infra-reverse-proxy infra-fail2ban infra-munin app-tategaki app-wordpress app-ttrss app-syncthing app-openvpn app-mirakurun-epgstation"
-AUTO_ENABLE_HTTPS=1
-```
-
-主な項目はこうです。
-
-- `STACK_ROOT`
-  - 各 repo を clone する親ディレクトリ
-- `STACK_GITHUB_OWNER`
-  - GitHub の owner 名
-- `CLONE_PROTOCOL`
-  - `https` または `ssh`
-- `SERVICES`
-  - 既定で管理対象にするサービス一覧
-- `EXCLUDED_SERVICES`
-  - 既定一覧から除外するサービス
-- `AUTO_ENABLE_HTTPS`
-  - `1` なら起動後に HTTPS 化を試みる
-
-`CLONE_PROTOCOL` は `https` か `ssh` を使えます。
-
-使わないサービスを毎回引数で並べたくない場合は、`stack.env.local` に `EXCLUDED_SERVICES` を書くと、既定の対象一覧からまとめて外せます。
-これは「インストールしないDocker」の一覧です。
-空なら全サービスが対象になります。
-
-```bash
-EXCLUDED_SERVICES="infra-munin app-openvpn"
-```
-
-この設定は `bootstrap-repos.sh` `init-env-files.sh` `check-layout.sh` `install-full-stack.sh` `up-selected.sh` `verify-stack.sh` の既定動作に反映されます。
-
-`AUTO_ENABLE_HTTPS=1` のときは、`infra-reverse-proxy` を含む一括起動の最後に `request-certificates.sh` を自動実行します。現在は Traefik 自身が ACME `HTTP-01` を行うため、別の `certbot` コンテナは使いません。
-
-録画系と管理系の公開入口には Basic 認証が入ります。初期資格情報は `configure-default-envs.sh` が `infra-reverse-proxy/.env.local` に保存します。
-localhost、ローカルLAN、Tailscale からのアクセスは既定で Basic 認証を省略します。`192.168.x.x` は `192.168.0.0/16` として含まれます。
-
-- `BASIC_AUTH_USER`
-- `BASIC_AUTH_PASSWORD`
-- `BASIC_AUTH_EXEMPT_SOURCE_RANGES`
-
-### `stack.service.env.local`
-
-`stack.service.env.local` は、親 repo から各サービスの値をまとめて上書きするための統括 env です。
-
-- 書いてある項目だけ上書きします
-- 書いていない項目は、各 service repo の `.env.local` をそのまま使います
-- つまり「よく変える値だけを親側へ集約する」ためのファイルです
-- 永続データの保存先も、ここから一括指定できます
-- `GLOBAL__...` を使うと、同じ値を複数サービスへ自動で配れます
-
-初回は次の雛形から作れます。
-
-```bash
-cp stack.service.env.example stack.service.env.local
-```
-
-書式は `サービス名を大文字化して __ を付ける` 形です。
-
-```bash
-INFRA_REVERSE_PROXY__DOMAIN=sample.com
-APP_WORDPRESS__APP_PORT=8080
-APP_TTRSS__TTRSS_SELF_URL_PATH=https://ttrss.sample.com/tt-rss/
-```
-
-「できるだけ 1 回だけ入力したい」なら、まずは `GLOBAL__...` を使うのがおすすめです。
-
-```bash
-GLOBAL__DOMAIN=sample.com
-GLOBAL__ROOT_HOST=sample.com
-GLOBAL__PUBLIC_SCHEME=https
-GLOBAL__LETSENCRYPT_EMAIL=admin@sample.com
-GLOBAL__BASIC_AUTH_USER=admin
-GLOBAL__BASIC_AUTH_PASSWORD=change-me
-GLOBAL__TZ=Asia/Tokyo
-GLOBAL__PUID=1000
-GLOBAL__PGID=1000
-GLOBAL__PROXY_NETWORK_NAME=proxy-network
-GLOBAL__HOST_DATA_ROOT=/srv/docker-data
-GLOBAL__RECORDED_ROOT=/srv/docker-recorded
-GLOBAL__PROXY_LOG_DIR=/srv/docker-stack/infra-reverse-proxy/data/log
-```
-
-これだけで、主に次が自動反映されます。
-
-- reverse proxy の各ホスト名
-- ttrss の `TTRSS_SELF_URL_PATH`
-- munin / mirakurun / epgrec / epgstation / traefik の Basic 認証
-- 各サービスの `TZ`
-- Syncthing / OpenVPN の `PUID` `PGID`
-- ttrss の `OWNER_UID` `OWNER_GID`
-- EPGStation の `EPGSTATION_UID` `EPGSTATION_GID`
-- 各サービスの `PROXY_NETWORK_NAME`
-- fail2ban の `PROXY_LOG_DIR`
-- 各サービスの永続データ保存先
-
-そのうえで、「ここだけ例外にしたい」ものだけを個別に足します。
-
-```bash
-APP_WORDPRESS__APP_PORT=8080
-APP_MIRAKURUN_EPGSTATION__DATA_SUBDIR=tv
-APP_MIRAKURUN_EPGSTATION__RECORDED_SUBDIR=tv-recorded
-```
-
-永続データをまとめて別ディスクへ置きたい場合は、次のような一括指定も使えます。
-
-```bash
-GLOBAL__HOST_DATA_ROOT=/srv/docker-data
-GLOBAL__RECORDED_ROOT=/srv/docker-recorded
-```
-
-proxy と fail2ban のログ位置をずらしたくない場合は、reverse proxy のログディレクトリも一箇所で管理できます。
-
-```bash
-GLOBAL__PROXY_LOG_DIR=/srv/docker-stack/infra-reverse-proxy/data/log
-```
-
-Docker network 名も一箇所で管理できます。proxy と各アプリは同じ network に入る必要があるため、通常はこの値を全サービスで揃えます。
-
-```bash
-GLOBAL__PROXY_NETWORK_NAME=proxy-network
-```
-
-この場合、各サービスは旧コンテナ基準のサブディレクトリ名で自動展開されます。
-サブディレクトリ名だけ変えたい場合は、たとえば次のように書けます。
-通常のHDD移行では、旧名を維持した方が `ln -s /mnt/.../var/docker/* ~/docker-data/` の結果と一致します。
-
-```bash
-APP_WORDPRESS__DATA_SUBDIR=wp
-APP_MIRAKURUN_EPGSTATION__DATA_SUBDIR=tv
-APP_MIRAKURUN_EPGSTATION__RECORDED_SUBDIR=tv-recorded
-```
-
-優先順位は次の通りです。
-
-1. `stack.service.env.local`
-2. 各 service repo の `.env.local`
-3. 各 service repo の `.env.example`
-
-### 各 service repo の `.env.local`
-
-各 repo の `.env.local` は、そのサービス専用の設定です。初回は次でひな型を作れます。
-
-```bash
-./scripts/init-env-files.sh
-```
-
-作られる中身は repo ごとに違いますが、意味はだいたい次の 4 系統です。
-
-- 公開設定
-  - 例: `DOMAIN`, `ROOT_HOST`, `TTRSS_HOST`, `TRAEFIK_HOST`
-- ポート設定
-  - 例: `APP_PORT`, `HTTP_PORT`, `HTTPS_PORT`, `MIRAKURUN_PORT`
-- 永続化パス
-  - 例: `HOST_DATA_DIR`, `WORDPRESS_DB_DIR`, `EPGSTATION_DATA_DIR`
-- 認証情報
-  - 例: `WORDPRESS_DB_PASSWORD`, `TTRSS_DB_PASS`, `BASIC_AUTH_PASSWORD`
-
-編集するときの目安はこうです。
-
-- 親 repo の動きを変えたい
-  - `stack.env.local`
-- WordPress だけポートや DB パスワードを変えたい
-  - `app-wordpress/.env.local`
-- proxy の公開ホスト名や Basic 認証を変えたい
-  - `infra-reverse-proxy/.env.local`
-- 録画データの保存先を変えたい
-  - `app-mirakurun-epgstation/.env.local`
-
-パスワードや実運用値は `.env.example` ではなく `.env.local` にだけ入れます。`.env.example` は雛形で、Git に入れてよい値だけを残す前提です。
-
-## リポジトリ取得 / 更新
-
-新しい PC では、まず sibling repo をまとめて clone できます。
-
-```bash
-./scripts/bootstrap-repos.sh
-```
-
-既に clone 済みの repo がある場合は `git pull --ff-only` で更新します。
-
-## env ファイル初期化
-
-`.env.local` がない repo には、`.env.example` からひな型を作れます。
-
-```bash
-./scripts/init-env-files.sh
-```
-
-作成後に、各 repo の `.env.local` を環境に合わせて編集します。
-
-## 新PC診断
-
-まず依存コマンド、Docker 権限、repo 配置を確認できます。
-
-```bash
-./scripts/doctor.sh
-```
-
-続けて、各 repo の `compose.yaml` と `.env.local` を使ったスモークテストを行えます。
-
-```bash
-./scripts/smoke-test.sh
-./scripts/smoke-test.sh --pull
-```
-
-詳細な流れは `TEST_PC_CHECKLIST.md` にまとめています。
-
-## レイアウト確認
+全体の配置を確認します。
 
 ```bash
 ./scripts/check-layout.sh
 ```
 
-特定サービスだけ確認することもできます。
-
-```bash
-./scripts/check-layout.sh app-tategaki app-wordpress
-```
-
-## 一括起動
-
-```bash
-./scripts/up-selected.sh
-```
-
-検証で通した推奨順に、bootstrap / env 初期化 / doctor / layout check / 起動 / 起動後確認 / 設定一覧出力までまとめて流す場合:
-
-```bash
-./scripts/run-full-stack.sh
-```
-
-すでに repo と `.env.local` が揃っている場合は、前段を飛ばして起動だけできます。
-
-```bash
-./scripts/install-full-stack.sh --skip-bootstrap --skip-init-env --skip-doctor --skip-check
-```
-
-特定サービスだけ起動する場合:
-
-```bash
-./scripts/up-selected.sh app-tategaki app-ttrss
-```
-
-既定一覧から一部だけ外して運用したい場合は、引数ではなく `stack.env.local` の `EXCLUDED_SERVICES` を使うのが楽です。
-
-## 起動後確認
-
-主要サービスの入口だけ再確認するには:
+起動状態を確認します。
 
 ```bash
 ./scripts/verify-stack.sh
 ```
 
-`infra-reverse-proxy` の Traefik が `443` を持っていれば HTTPS で検証し、まだ証明書がない新規マシンでは HTTP で検証します。
-
-Basic 認証がかかる `munin` `mirakurun` `epgrec` `epgstation` `traefik` については、`verify-stack.sh` が `infra-reverse-proxy/.env.local` の資格情報を自動で使います。
-
-OpenVPN AS は、943 の Web UI と 9443/TCP の待受だけでなく、コンテナ内の `sacli status` で `web` `user` `openvpn_0` が `on` かも確認します。ポートだけ開いていても iptables モジュール不足で VPN 本体が落ちている場合を検出するためです。
-
-手元に別回線がなく、外からの到達確認ができない場合は、GitHub Actions の `Public Endpoint Check` を使えます。これは GitHub の外部 runner から次を確認します。
-
-- `https://sample.com/`
-- `https://ttrss.sample.com/tt-rss/`
-- `https://munin.sample.com/`
-- `https://tategaki.sample.com/`
-- `https://syncthing.sample.com/`
-- `https://openvpn.sample.com/`
-- `https://traefik.sample.com/dashboard/`
-- `https://mirakurun.sample.com/`
-- `https://epgrec.sample.com/`
-- `https://epgstation.sample.com/`
-
-手元から試す場合は:
+公開 URL を確認します。
 
 ```bash
 ./scripts/check-public-urls.sh
 ```
 
-## 切替前確認
+## 補足
 
-既存の live 環境とポートが衝突するかを確認できます。
-
-```bash
-./scripts/preflight-cutover.sh
-```
-
-特定サービスだけ見る場合:
-
-```bash
-./scripts/preflight-cutover.sh app-wordpress app-ttrss
-```
-
-## 旧構成からの切替
-
-サービス単位で、旧 compose を止めて新 repo を起動する cutover スクリプトを用意しています。
-
-まずは dry-run:
-
-```bash
-./scripts/cutover-service.sh app-wordpress
-```
-
-実行する場合:
-
-```bash
-./scripts/cutover-service.sh --apply app-wordpress
-```
-
-rollback も同様です。
-
-```bash
-./scripts/rollback-to-legacy.sh app-wordpress
-./scripts/rollback-to-legacy.sh --apply app-wordpress
-```
-
-この cutover 系スクリプトを使う場合は、`repos/legacy-services.example.tsv` を `repos/legacy-services.local.tsv` にコピーして、旧 compose のパスをそのマシン用に設定します。
-
-## 方針
-
-- 正本は各サービス repo
-- 親 repo は orchestration のみ
-- 実データや秘密情報は各 repo の `.env.local` と `data/` 側で管理
-- 新しい PC では対話式コマンド 1 本 -> 質問に回答 -> `run-full-stack.sh` の流れで復元する
-- live 環境の切替は `preflight-cutover.sh` で衝突確認してから、`cutover-service.sh --apply <service>` をサービス単位で進める
+- GitHub のコミット履歴が英語で分かりにくい場合は、`docs/COMMIT_HISTORY_JA.md` を見てください。
+- この親リポジトリだけで完結するのではなく、各サービス用リポジトリと合わせて使います。
+- 個別サービスの細かい設定は、それぞれの README と `.env.example` を確認します。

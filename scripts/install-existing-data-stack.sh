@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# 既存 HDD / 既存 Docker データを使って stack を入れる汎用入口です。
+# 既存 HDD / 既存 Docker データを使って一式を入れる汎用入口です。
 # このスクリプト自体はデータ削除・再同期・広範囲 chown を行いません。
-# env 作成、repo 更新、既存 install script の呼び出しだけをまとめます。
+# 設定作成、リポジトリ更新、既存インストールスクリプトの呼び出しだけをまとめます。
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -45,11 +45,11 @@ Options:
   --public-scheme <http|https>   公開URLの方式です。既定値は https です
   --host-data-root <path>        既存 Docker データの親ディレクトリです
   --recorded-root <path>         録画ファイルのディレクトリです
-  --stack-root <path>            sibling repo を置く親ディレクトリです
+  --stack-root <path>            関連リポジトリを置く親ディレクトリです
   --owner <github-owner>         GitHub owner です。既定値は Arrumis です
   --branch <branch>              docker-stack-installer の branch 記録用です
   --exclude-services <list>      インストールしないDockerを空白区切りで指定します
-  --prepare-only                 env 作成と repo 更新だけ行い、Docker 起動はしません
+  --prepare-only                 設定作成とリポジトリ更新だけ行い、Docker 起動はしません
   --skip-verify                  起動後の verify-stack.sh を飛ばします
   --basic-auth-password <pw>     Traefik 保護画面の Basic 認証パスワード
   --openvpn-admin-password <pw>  OpenVPN admin パスワードを明示変更します
@@ -221,7 +221,7 @@ main() {
   cd "${REPO_ROOT}"
 
   echo "== existing data stack install =="
-  echo "作業 repo: ${REPO_ROOT}"
+  echo "作業リポジトリ: ${REPO_ROOT}"
   echo "STACK_ROOT: ${STACK_ROOT}"
   echo "HOST_DATA_ROOT: ${HOST_DATA_ROOT}"
   echo "RECORDED_ROOT: ${RECORDED_ROOT}"
