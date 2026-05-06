@@ -7,10 +7,9 @@ USER_HOME="${USER_HOME:-${HOME}}"
 STACK_ROOT="${STACK_ROOT:-${USER_HOME}/docker-stack}"
 STACK_GITHUB_OWNER="${STACK_GITHUB_OWNER:-your-github-user}"
 CLONE_PROTOCOL="${CLONE_PROTOCOL:-https}"
-# この改修ブランチを raw.githubusercontent.com から直接実行した場合でも、
-# clone される installer repo が main に戻らないよう、branch 既定値を合わせる。
-# main へ取り込むときは main に戻す。
-INSTALLER_BRANCH="${INSTALLER_BRANCH:-refactor/align-runtime-containers}"
+# raw.githubusercontent.com から直接実行した branch と clone する branch を合わせる。
+# 通常運用では main を使い、検証ブランチを使う場合だけ --branch で明示する。
+INSTALLER_BRANCH="${INSTALLER_BRANCH:-main}"
 DOMAIN="${DOMAIN:-}"
 ROOT_HOST="${ROOT_HOST:-}"
 LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-}"
