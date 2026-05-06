@@ -193,7 +193,7 @@ GLOBAL__BASIC_AUTH_PASSWORD=自分で決めた強いパスワード
 
 | サービス | 引き継ぎ互換の要点 |
 |---|---|
-| WordPress | DB 名 `wp-db`、ユーザー `wp-db-user`、パスワード `wp-db-pw` を既定にします |
+| WordPress | DB 名 `wp-db`、ユーザー `wp-db-user`、パスワード `wp-db-pw` を既定にします。稼働中DBを移す場合、`wp/db_data` は raw rsync ではなく `app-wordpress/scripts/restore-db-dump.sh` で dump から復旧します |
 | ttrss | フォルダ構造と DB 接続値は旧環境を踏襲します。旧 `cthulhoo/*` image は pull できないため、image だけ公式案内の `supahgreg/*` を使います |
 | OpenVPN AS | 旧 `/config` を読むため、稼働実績のある linuxserver/openvpn-as digest に固定します。起動前に `tun` と iptables 系カーネルモジュールも確認します |
 | Mirakurun / EPGStation | DB パスワード `epgstation` を既定にします。DB は現行稼働構成に合わせて `mirakurun/mira_sql` を優先し、古い `mirakurun-epgstation/mariadb` は後方互換候補として扱います。録画保存先は `GLOBAL__RECORDED_ROOT` をそのまま使うため、HDD移行時は `~/docker-data/recorded` のような既存 symlink を指定します |
