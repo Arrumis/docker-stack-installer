@@ -111,11 +111,14 @@ check_openvpn_as_status() {
 
   if ! status="$(
     run_new_compose "app-openvpn" exec -T openvpn-as sh -lc '
-      if [ ! -x /usr/local/openvpn_as/scripts/sacli ]; then
+      if [ -x /usr/local/openvpn_as/scripts/sacli ]; then
+        /usr/local/openvpn_as/scripts/sacli status
+      elif [ -x /config/scripts/sacli ]; then
+        /config/scripts/sacli status
+      else
         echo "sacli not found"
         exit 1
       fi
-      /usr/local/openvpn_as/scripts/sacli status
     ' 2>/dev/null
   )"; then
     echo "NG openvpn service status"
