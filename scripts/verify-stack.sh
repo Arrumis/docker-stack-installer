@@ -106,6 +106,34 @@ check_tcp() {
   fi
 }
 
+check_openvpn_as_status() {
+  local status
+
+  if ! status="$(
+    run_new_compose "app-openvpn" exec -T openvpn-as sh -lc '
+      if [ ! -x /usr/local/openvpn_as/scripts/sacli ]; then
+        echo "sacli not found"
+        exit 1
+      fi
+      /usr/local/openvpn_as/scripts/sacli status
+    ' 2>/dev/null
+  )"; then
+    echo "NG openvpn service status"
+    verify_status=1
+    return 0
+  fi
+
+  if grep -q '"web": "on"' <<<"${status}" \
+    && grep -q '"user": "on"' <<<"${status}" \
+    && grep -q '"openvpn_0": "on"' <<<"${status}"; then
+    echo "OK openvpn service status"
+  else
+    echo "NG openvpn service status"
+    echo "WARN openvpn service status: web/user/openvpn_0 のいずれかが on ではありません"
+    verify_status=1
+  fi
+}
+
 https_active() {
   ss -tln | grep -qE '[:.]443[[:space:]]'
 }
@@ -284,6 +312,7 @@ verify_service_ports() {
     openvpn_https_port="$(env_value "app-openvpn" "HTTPS_PORT" "9443")"
     check_curl "openvpn admin" curl -kfsSI "https://127.0.0.1:${admin_ui_port}/admin"
     check_tcp "openvpn client tcp" "127.0.0.1" "${openvpn_https_port}"
+    check_openvpn_as_status
   fi
 
   if service_requested "app-tategaki"; then

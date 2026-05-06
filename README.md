@@ -194,8 +194,8 @@ GLOBAL__BASIC_AUTH_PASSWORD=自分で決めた強いパスワード
 |---|---|
 | WordPress | DB 名 `wp-db`、ユーザー `wp-db-user`、パスワード `wp-db-pw` を既定にします |
 | ttrss | フォルダ構造と DB 接続値は旧環境を踏襲します。旧 `cthulhoo/*` image は pull できないため、image だけ公式案内の `supahgreg/*` を使います |
-| OpenVPN AS | 旧 `/config` を読むため、稼働実績のある linuxserver/openvpn-as digest に固定します |
-| Mirakurun / EPGStation | DB パスワード `epgstation` を既定にし、チューナー自動判定は service repo 側の override を使います |
+| OpenVPN AS | 旧 `/config` を読むため、稼働実績のある linuxserver/openvpn-as digest に固定します。起動前に `tun` と iptables 系カーネルモジュールも確認します |
+| Mirakurun / EPGStation | DB パスワード `epgstation` を既定にします。`mirakurun-epgstation/mariadb` が既存DBとして残っている場合は、空の `mirakurun/mira_sql` よりそちらを優先します |
 
 OpenVPN の admin パスワードは、明示指定した場合だけ変更します。
 既存 `/config` を引き継ぐ場合、空のままなら既存ユーザー情報を維持します。
@@ -239,6 +239,8 @@ cd ~/docker-stack/docker-stack-installer
 
 OpenVPN admin パスワードは、指定した場合だけ変更します。
 既存 `openvpn` データのユーザー情報をそのまま使う場合は指定しません。
+
+`app-openvpn` を含める場合は、OpenVPN AS が `tun` と iptables を使えるように `modprobe` と `/etc/modules-load.d/openvpn-as.conf` の作成を行います。
 
 `app-mirakurun-epgstation` を含める場合は、旧 `mirakurun.sh` から移したホスト準備スクリプトも実行されます。ここでは `sudo apt-get install` と `pcscd` 停止が入るため、録画環境だけはホスト側変更を伴います。
 
@@ -579,6 +581,8 @@ APP_MIRAKURUN_EPGSTATION__RECORDED_SUBDIR=tv-recorded
 `infra-reverse-proxy` の Traefik が `443` を持っていれば HTTPS で検証し、まだ証明書がない新規マシンでは HTTP で検証します。
 
 Basic 認証がかかる `munin` `mirakurun` `epgrec` `epgstation` `traefik` については、`verify-stack.sh` が `infra-reverse-proxy/.env.local` の資格情報を自動で使います。
+
+OpenVPN AS は、943 の Web UI と 9443/TCP の待受だけでなく、コンテナ内の `sacli status` で `web` `user` `openvpn_0` が `on` かも確認します。ポートだけ開いていても iptables モジュール不足で VPN 本体が落ちている場合を検出するためです。
 
 手元に別回線がなく、外からの到達確認ができない場合は、GitHub Actions の `Public Endpoint Check` を使えます。これは GitHub の外部 runner から次を確認します。
 

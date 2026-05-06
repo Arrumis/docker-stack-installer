@@ -82,6 +82,46 @@ run_sudo_if_needed() {
   sudo "$@"
 }
 
+setup_openvpn_host_kernel() {
+  local modules_file="/etc/modules-load.d/openvpn-as.conf"
+  local tmp_file
+  local module
+  local modules=(
+    tun
+    ip_tables
+    iptable_filter
+    ip6_tables
+    ip6table_filter
+  )
+
+  if ! command -v modprobe >/dev/null 2>&1; then
+    echo "WARN app-openvpn: modprobe が無いためカーネルモジュール確認をスキップします"
+    return 0
+  fi
+
+  echo "== prepare app-openvpn: kernel modules =="
+  echo "OpenVPN AS が iptables/tun を使えるよう、必要なカーネルモジュールを確認します。"
+
+  for module in "${modules[@]}"; do
+    if run_sudo_if_needed modprobe "${module}"; then
+      echo "OK module: ${module}"
+    else
+      echo "WARN module: ${module} をロードできませんでした"
+    fi
+  done
+
+  tmp_file="$(mktemp)"
+  {
+    echo "# docker-stack-installer: OpenVPN AS が再起動後も iptables/tun を使うための設定です。"
+    for module in "${modules[@]}"; do
+      echo "${module}"
+    done
+  } >"${tmp_file}"
+  run_sudo_if_needed install -m 0644 "${tmp_file}" "${modules_file}"
+  rm -f "${tmp_file}"
+  echo "OK modules-load: ${modules_file}"
+}
+
 repair_mirakurun_config_permissions() {
   local service_name="app-mirakurun-epgstation"
   local service_dir
@@ -182,6 +222,9 @@ preinstall_service() {
       if [[ "${service_name}" == "app-mirakurun-epgstation" ]]; then
         run_service_script_if_present "${service_name}" "scripts/prepare-host.sh"
         repair_mirakurun_config_permissions
+      fi
+      if [[ "${service_name}" == "app-openvpn" ]]; then
+        setup_openvpn_host_kernel
       fi
       run_service_script_if_present "${service_name}" "scripts/init-data-dirs.sh"
       ;;

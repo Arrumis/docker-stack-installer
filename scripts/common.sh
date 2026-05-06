@@ -121,6 +121,46 @@ join_data_root() {
   esac
 }
 
+select_epg_layout_root() {
+  local service_root="$1"
+
+  if [[ -d "${service_root}/mirakurun/conf" || -d "${service_root}/epgstation/config" ]]; then
+    printf '%s\n' "${service_root}"
+    return 0
+  fi
+
+  if [[ -d "${service_root}/mirakurun-epgstation/mirakurun" || -d "${service_root}/mirakurun-epgstation/epgstation" ]]; then
+    printf '%s/mirakurun-epgstation\n' "${service_root}"
+    return 0
+  fi
+
+  printf '%s\n' "${service_root}"
+}
+
+select_epg_db_dir() {
+  local service_root="$1"
+  local layout_root="$2"
+  local candidate
+
+  # 旧 docker-mirakurun-epgstation 系は DB を ./mariadb に置く構成がある。
+  # 既存データ引き継ぎでは、空の mira_sql を新規DBとして使うより、
+  # mysql/epgstation を持つ既存DBディレクトリを優先する。
+  for candidate in \
+    "${service_root}/mariadb" \
+    "${service_root}/mirakurun-epgstation/mariadb" \
+    "${layout_root}/mariadb" \
+    "${layout_root}/mirakurun/mira_sql" \
+    "${service_root}/mirakurun/mira_sql"
+  do
+    if [[ -d "${candidate}/mysql" && -d "${candidate}/epgstation" ]]; then
+      printf '%s\n' "${candidate}"
+      return 0
+    fi
+  done
+
+  printf '%s/mirakurun/mira_sql\n' "${layout_root}"
+}
+
 apply_unified_global_layout_for_service() {
   local service_name="$1"
   local service_dir
@@ -270,6 +310,7 @@ apply_unified_data_layout_for_service() {
   local data_subdir
   local recorded_subdir
   local service_root
+  local epg_layout_root
 
   [[ -f "${UNIFIED_ENV_FILE}" ]] || return 0
 
@@ -316,14 +357,15 @@ apply_unified_data_layout_for_service() {
         env_set_file "${service_dir}/${env_file}" "OPENVPN_CONFIG_DIR" "${service_root}"
         ;;
       app-mirakurun-epgstation)
-        env_set_file "${service_dir}/${env_file}" "HOST_DATA_DIR" "${service_root}"
-        env_set_file "${service_dir}/${env_file}" "MIRAKURUN_CONFIG_DIR" "${service_root}/mirakurun/conf"
-        env_set_file "${service_dir}/${env_file}" "MIRAKURUN_DATA_DIR" "${service_root}/mirakurun/data"
-        env_set_file "${service_dir}/${env_file}" "EPG_DB_DIR" "${service_root}/mirakurun/mira_sql"
-        env_set_file "${service_dir}/${env_file}" "EPGSTATION_CONFIG_DIR" "${service_root}/epgstation/config"
-        env_set_file "${service_dir}/${env_file}" "EPGSTATION_DATA_DIR" "${service_root}/epgstation/data"
-        env_set_file "${service_dir}/${env_file}" "EPGSTATION_THUMBNAIL_DIR" "${service_root}/epgstation/thumbnail"
-        env_set_file "${service_dir}/${env_file}" "EPGSTATION_LOGS_DIR" "${service_root}/epgstation/logs"
+        epg_layout_root="$(select_epg_layout_root "${service_root}")"
+        env_set_file "${service_dir}/${env_file}" "HOST_DATA_DIR" "${epg_layout_root}"
+        env_set_file "${service_dir}/${env_file}" "MIRAKURUN_CONFIG_DIR" "${epg_layout_root}/mirakurun/conf"
+        env_set_file "${service_dir}/${env_file}" "MIRAKURUN_DATA_DIR" "${epg_layout_root}/mirakurun/data"
+        env_set_file "${service_dir}/${env_file}" "EPG_DB_DIR" "$(select_epg_db_dir "${service_root}" "${epg_layout_root}")"
+        env_set_file "${service_dir}/${env_file}" "EPGSTATION_CONFIG_DIR" "${epg_layout_root}/epgstation/config"
+        env_set_file "${service_dir}/${env_file}" "EPGSTATION_DATA_DIR" "${epg_layout_root}/epgstation/data"
+        env_set_file "${service_dir}/${env_file}" "EPGSTATION_THUMBNAIL_DIR" "${epg_layout_root}/epgstation/thumbnail"
+        env_set_file "${service_dir}/${env_file}" "EPGSTATION_LOGS_DIR" "${epg_layout_root}/epgstation/logs"
         ;;
     esac
   fi
