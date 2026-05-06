@@ -362,9 +362,11 @@ EXCLUDED_SERVICES="infra-munin app-openvpn"
 `AUTO_ENABLE_HTTPS=1` のときは、`infra-reverse-proxy` を含む一括起動の最後に `request-certificates.sh` を自動実行します。現在は Traefik 自身が ACME `HTTP-01` を行うため、別の `certbot` コンテナは使いません。
 
 録画系と管理系の公開入口には Basic 認証が入ります。初期資格情報は `configure-default-envs.sh` が `infra-reverse-proxy/.env.local` に保存します。
+localhost、ローカルLAN、Tailscale からのアクセスは既定で Basic 認証を省略します。`192.168.x.x` は `192.168.0.0/16` として含まれます。
 
 - `BASIC_AUTH_USER`
 - `BASIC_AUTH_PASSWORD`
+- `BASIC_AUTH_EXEMPT_SOURCE_RANGES`
 
 ### `stack.service.env.local`
 

@@ -175,6 +175,7 @@ apply_unified_global_layout_for_service() {
   local pgid
   local basic_auth_user
   local basic_auth_password
+  local basic_auth_exempt_source_ranges
   local proxy_network_name
   local proxy_log_dir
 
@@ -194,6 +195,7 @@ apply_unified_global_layout_for_service() {
   pgid="${GLOBAL__PGID:-}"
   basic_auth_user="${GLOBAL__BASIC_AUTH_USER:-}"
   basic_auth_password="${GLOBAL__BASIC_AUTH_PASSWORD:-}"
+  basic_auth_exempt_source_ranges="${GLOBAL__BASIC_AUTH_EXEMPT_SOURCE_RANGES:-}"
   proxy_network_name="${GLOBAL__PROXY_NETWORK_NAME:-}"
   proxy_log_dir="${GLOBAL__PROXY_LOG_DIR:-}"
 
@@ -224,6 +226,9 @@ apply_unified_global_layout_for_service() {
       fi
       if [[ -n "${basic_auth_password}" ]]; then
         env_set_file "${service_dir}/${env_file}" "BASIC_AUTH_PASSWORD" "${basic_auth_password}"
+      fi
+      if [[ -n "${basic_auth_exempt_source_ranges}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "BASIC_AUTH_EXEMPT_SOURCE_RANGES" "${basic_auth_exempt_source_ranges}"
       fi
       if [[ -n "${timezone}" ]]; then
         env_set_file "${service_dir}/${env_file}" "TZ" "${timezone}"
