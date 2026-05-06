@@ -178,6 +178,10 @@ apply_unified_global_layout_for_service() {
   local basic_auth_exempt_source_ranges
   local proxy_network_name
   local proxy_log_dir
+  local discord_webhook_url
+  local discord_notify_container
+  local discord_notify_state_dir
+  local discord_notify_log_file
 
   [[ -f "${UNIFIED_ENV_FILE}" ]] || return 0
 
@@ -198,6 +202,10 @@ apply_unified_global_layout_for_service() {
   basic_auth_exempt_source_ranges="${GLOBAL__BASIC_AUTH_EXEMPT_SOURCE_RANGES:-}"
   proxy_network_name="${GLOBAL__PROXY_NETWORK_NAME:-}"
   proxy_log_dir="${GLOBAL__PROXY_LOG_DIR:-}"
+  discord_webhook_url="${GLOBAL__DISCORD_WEBHOOK_URL:-}"
+  discord_notify_container="${GLOBAL__DISCORD_NOTIFY_CONTAINER:-}"
+  discord_notify_state_dir="${GLOBAL__DISCORD_NOTIFY_STATE_DIR:-}"
+  discord_notify_log_file="${GLOBAL__DISCORD_NOTIFY_LOG_FILE:-}"
 
   if [[ -z "${letsencrypt_email}" && -n "${domain}" ]]; then
     letsencrypt_email="admin@${domain}"
@@ -291,6 +299,18 @@ apply_unified_global_layout_for_service() {
       fi
       if [[ -n "${proxy_log_dir}" ]]; then
         env_set_file "${service_dir}/${env_file}" "PROXY_LOG_DIR" "${proxy_log_dir}"
+      fi
+      if [[ -n "${discord_webhook_url}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "DISCORD_WEBHOOK_URL" "${discord_webhook_url}"
+      fi
+      if [[ -n "${discord_notify_container}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "DISCORD_NOTIFY_CONTAINER" "${discord_notify_container}"
+      fi
+      if [[ -n "${discord_notify_state_dir}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "DISCORD_NOTIFY_STATE_DIR" "${discord_notify_state_dir}"
+      fi
+      if [[ -n "${discord_notify_log_file}" ]]; then
+        env_set_file "${service_dir}/${env_file}" "DISCORD_NOTIFY_LOG_FILE" "${discord_notify_log_file}"
       fi
       ;;
     infra-munin|app-tategaki|app-wordpress)
